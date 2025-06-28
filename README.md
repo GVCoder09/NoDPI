@@ -13,19 +13,28 @@
 This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
 ## Description / Описание
-NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system, which allows blocking access to Internet resources. This utility allows you to bypass such blockings and freely use the Internet.
+NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system. DPI is widely used by Internet providers and government agencies to block access to Internet resources. This utility allows you to bypass such blocking and freely use the Internet. In particular, it allows you to eliminate the blocking of YouTube in Russia.
 
-In particular, it allows you to eliminate YouTube blocking in Russia. Unfortunately, I cannot guarantee the absolute functionality of the program in all conditions and with all providers, but nevertheless, in most cases, it copes with its task perfectly.
+Unfortunately, I cannot guarantee the absolute functionality of the program in all conditions and with all providers, but in most cases it copes with its task perfectly.
+The utility works on the principle of an HTTP proxy. It analyzes all TLS handshakes passing through it and fragments them if they are addressed to blocked domains. Currently, DPI does not have the capacity to collect these fragments and analyze them, so NoDPI manages to "fool" it.
 
-The utility works on the principle of HTTP proxy. It analyzes packet headers and fragments them, which allows you to deceive DPI. The utility does not collect or send any data and does not require administrator privileges to run.
+The utility does not collect or send any data and does not require administrator privileges to run.
+
+The entire code is written entirely in Python and does not use third-party dependencies.
 
 <hr>
 
-NoDPI - это утилита для обхода системы DPI (Deep Packet Inspection), которая позволяет блокировать доступ к интерент-ресурсам. Данная утилита позволяет обходить такие блокировки и свободно пользоваться Интернетом. 
+NoDPI - это утилита для обхода системы DPI (Deep Packet Inspection). DPI широко используется интерент-провайдерами и гос. органами для блокировки доступа к интерент-ресурсам. Данная утилита позволяет обходить такие блокировки и свободно пользоваться Интернетом. В частности, она позволяет устранить блокировку YouTube в России.
 
-В частности, она позволяет устранить блокировку YouTube в России. К сожалению, я не могу гарантировать абсолютную работоспособность программы во всех условиях и у всех провайдеров, но тем не менне в большинстве случаев она отлично справляется со своей задачей.
+К сожалению, я не могу гарантировать абсолютную работоспособность программы во всех условиях и у всех провайдеров, но в большинстве случаев она отлично справляется со своей задачей.
 
-Утилита работает по принципу HTTP прокси. Она анализирует заголовки пакетов и фрагментирует их, что позволяет обмануть DPI. Утилита не собирает и не отправляет никаких данных и не требует привелегий администратора для запуска.
+Утилита работает по принципу HTTP прокси. Она анализирует все  проходящие через нее TLS handshake и фрагментирует их, если они адресованы заблокированным доменам. В настоящее время у DPI нет таких мощностей, чтобы собиртаь эти фрагменты и анализировать их, поэтому NoDPI получается ее "обмануть".
+
+Утилита не собирает и не отправляет никаких данных и не требует привелегий администратора для запуска.
+
+Весь код полностью написан на языке Python и не использует сторонних зависимостей.
+
+[![](https://habrastorage.org/r/w1560/getpro/habr/upload_files/217/1ff/871/2171ff87152a613fa85bfc83d2669469.png)]()
 
 ### Alternatives / Альтернативы 
 - **[GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI)** by @ValdikSS (for Windows)
