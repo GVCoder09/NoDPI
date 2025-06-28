@@ -10,7 +10,8 @@
 
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=GVCoder09.NoDPI)]()
 
-This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
+> [!IMPORTANT]
+> This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
 ## Description / Описание
 NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system. DPI is widely used by Internet providers and government agencies to block access to Internet resources. This utility allows you to bypass such blocking and freely use the Internet. In particular, it allows you to eliminate the blocking of YouTube in Russia.
@@ -51,7 +52,8 @@ NoDPI - это утилита для обхода системы DPI (Deep Packe
 - **[youtubeUnblock](https://github.com/Waujito/youtubeUnblock/)** by @Waujito (for OpenWRT/Entware routers and Linux)
 
 ## Terms of Use and Disclaimer / Условия использования и отказ от ответственности
-This provision is in addition to the license and takes precedence over it.
+> [!IMPORTANT]
+> This provision is in addition to the license and takes precedence over it.
 
 The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages.
 
