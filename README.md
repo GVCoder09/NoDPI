@@ -13,6 +13,8 @@
 > [!IMPORTANT]
 > This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
+[**Available version for Android!**](https://github.com/GVCoder09/NoDPI4Android)
+
 ## Description / Описание
 NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system. DPI is widely used by Internet providers and government agencies to block access to Internet resources. This utility allows you to bypass such blocking and freely use the Internet. In particular, it allows you to eliminate the blocking of YouTube in Russia.
 
