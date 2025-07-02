@@ -89,6 +89,9 @@ Your use of this software constitutes your agreement to the terms of this discla
 4) In some browsers, you may need to disable kyber
 5) Enjoy!
 
+> [!IMPORTANT]
+> Don't forget to disable the proxy in your system and browser settings after closing the program!
+
 Please report any problems and malfunctions to us on [the Issues page](https://github.com/GVCoder09/NoDPI/issues)
 
 <hr>
@@ -98,6 +101,9 @@ Please report any problems and malfunctions to us on [the Issues page](https://g
 3) В настройках браузера или системы настройте прокси на 127.0.0.1:8881
 4) В некоторых браузерах может потребоваться отключение kyber
 5) Наслаждайтесь!
+
+> [!IMPORTANT]
+> Не забудьте отключить прокси в настройках системы и браузера после закрытия программы!
 
 О всех проблемах и неполадках, пожалуйста, сообщайте нам в [Issues](https://github.com/GVCoder09/NoDPI/issues)
 
