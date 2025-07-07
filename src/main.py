@@ -6,11 +6,12 @@ import random
 import logging
 import os
 import sys
+import requests
 from datetime import datetime
 import time
 import traceback
 
-__version__ = "1.8.2"
+__version__ = "1.9"
 
 os.system("")
 
@@ -30,7 +31,7 @@ class ConnectionInfo:
 
 class ProxyServer:
 
-    def __init__(self, host, port, blacklist, log_access, log_err, no_blacklist, quiet, verbose):
+    def __init__(self, host, port, blacklist, log_access, log_err, no_blacklist, auto_blacklist, quiet, verbose):
 
         self.host = host
         self.port = port
@@ -38,6 +39,7 @@ class ProxyServer:
         self.log_access_file = log_access
         self.log_err_file = log_err
         self.no_blacklist = no_blacklist
+        self.auto_blacklist = auto_blacklist
         self.quiet = quiet
         self.verbose = verbose
 
@@ -61,6 +63,7 @@ class ProxyServer:
         self.tasks_lock = asyncio.Lock()
 
         self.blocked = []
+        self.whitelist = []
         self.tasks = []
         self.server = None
 
@@ -289,6 +292,16 @@ class ProxyServer:
             conn_info = ConnectionInfo(
                 client_ip, host.decode(), method.decode())
 
+            if method == b"CONNECT" and self.auto_blacklist:
+                try:
+                    if host not in self.blocked and host not in self.whitelist:
+                        requests.get('https://' + host.decode(), timeout=3)
+                        self.whitelist.append(host)
+                except Exception:  # pylint: disable=broad-except
+                    self.blocked.append(host)
+                    with open(self.blacklist, "a", encoding="utf-8") as f:
+                        f.write(host.decode() + "\n")
+
             async with self.connections_lock:
                 self.active_connections[conn_key] = conn_info
 
@@ -465,6 +478,9 @@ class ProxyApplication:
         blacklist_group.add_argument(
             "--no_blacklist", action="store_true", help="Use fragmentation for all domains"
         )
+        blacklist_group.add_argument(
+            "--autoblacklist", action="store_true", help="Automatic detection of blocked domains"
+        )
 
         parser.add_argument(
             "--log_access", required=False, help="Path to the access control log"
@@ -563,6 +579,7 @@ class ProxyApplication:
             args.log_access,
             args.log_error,
             args.no_blacklist,
+            args.autoblacklist,
             args.quiet,
             args.verbose,
         )

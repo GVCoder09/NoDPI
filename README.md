@@ -124,10 +124,8 @@ Please report any problems and malfunctions to us on [the Issues page](https://g
 
 ## Supported arguments / Поддерживаемые аргументы командной строки
 ```
-usage: nodpi [-h] [--host HOST] [--port PORT] 
-             [--blacklist BLACKLIST | --no_blacklist] 
-             [--log_access LOG_ACCESS] [--log_error LOG_ERROR] 
-             [-q] [-v] [--install | --uninstall]
+usage: nodpi [-h] [--host HOST] [--port PORT] [--blacklist BLACKLIST | --no_blacklist | --autoblacklist] 
+                  [--log_access LOG_ACCESS] [--log_error LOG_ERROR] [-q] [-v] [--install | --uninstall]
 
 options:
   -h, --help            show this help message and exit
@@ -136,6 +134,7 @@ options:
   --blacklist BLACKLIST
                         Path to blacklist file
   --no_blacklist        Use fragmentation for all domains
+  --autoblacklist       Automatic detection of blocked domains
   --log_access LOG_ACCESS
                         Path to the access control log
   --log_error LOG_ERROR
