@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
+from urllib.error import URLError
 import ssl
 from datetime import datetime
 import time
