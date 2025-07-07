@@ -126,7 +126,7 @@ class ProxyServer:
         """
         Load the blacklist from the specified file.
         """
-        if self.no_blacklist:
+        if self.no_blacklist or self.auto_blacklist:
             return
         if not os.path.exists(self.blacklist):
             self.print(
