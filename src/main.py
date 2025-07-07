@@ -149,9 +149,16 @@ class ProxyServer:
         self.print_banner()
         if not self.quiet:
             asyncio.create_task(self.display_stats())
-        self.server = await asyncio.start_server(
-            self.handle_connection, self.host, self.port
-        )
+        try:
+            self.server = await asyncio.start_server(
+                self.handle_connection, self.host, self.port
+            )
+        except OSError:
+            self.print(
+                f"\033[91m[ERROR]: Failed to start proxy on this address ({self.host}:{self.port}). It looks like the port is already in use\033[0m")
+            self.logger.error("Port %s is already in use", self.port)
+            sys.exit(1)
+
         asyncio.create_task(self.cleanup_tasks())
         await self.server.serve_forever()
 
@@ -180,7 +187,7 @@ class ProxyServer:
         self.print(
             f"\033[92m[INFO]:\033[97m Proxy started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
-        if not self.no_blacklist:
+        if not self.no_blacklist and not self.auto_blacklist:
             self.print(
                 f"\033[92m[INFO]:\033[97m Blacklist contains {len(self.blocked)} domains"
             )
