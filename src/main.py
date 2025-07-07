@@ -6,7 +6,9 @@ import random
 import logging
 import os
 import sys
-import requests
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+import ssl
 from datetime import datetime
 import time
 import traceback
@@ -302,12 +304,18 @@ class ProxyServer:
             if method == b"CONNECT" and self.auto_blacklist:
                 try:
                     if host not in self.blocked and host not in self.whitelist:
-                        requests.get('https://' + host.decode(), timeout=3)
-                        self.whitelist.append(host)
-                except Exception:  # pylint: disable=broad-except
-                    self.blocked.append(host)
-                    with open(self.blacklist, "a", encoding="utf-8") as f:
-                        f.write(host.decode() + "\n")
+                        req = Request(
+                            'https://' + host.decode(), headers={'User-Agent': 'Mozilla/5.0'})
+                        context = ssl._create_unverified_context()  # pylint: disable=protected-access
+
+                        with urlopen(req, timeout=4, context=context):
+                            self.whitelist.append(host)
+                except URLError as e:
+                    reason = str(e.reason)
+                    if "handshake operation timed out" in reason:
+                        self.blocked.append(host)
+                        with open(self.blacklist, "a", encoding="utf-8") as f:
+                            f.write(host.decode() + "\n")
 
             async with self.connections_lock:
                 self.active_connections[conn_key] = conn_info
