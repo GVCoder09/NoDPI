@@ -13,6 +13,9 @@
 > [!IMPORTANT]
 > This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
+> [!IMPORTANT]
+> If you have experience using this utility, please support its existence by leaving your feedback on this page - https://forms.gle/qx6BJUbfgBaLbqwu6 This is very important to us!
+
 [**Available version for Android!**](https://github.com/GVCoder09/NoDPI4Android)
 
 ## Description / Описание
