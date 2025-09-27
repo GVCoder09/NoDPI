@@ -22,6 +22,8 @@ if sys.platform == "win32":
 
 
 class ConnectionInfo:
+    """ Class to store connection information """
+
     def __init__(self, src_ip, dst_domain, method):
         self.src_ip = src_ip
         self.dst_domain = dst_domain
@@ -32,8 +34,10 @@ class ConnectionInfo:
 
 
 class ProxyServer:
+    """ Class to handle the proxy server """
 
-    def __init__(self, host, port, blacklist, log_access, log_err, no_blacklist, auto_blacklist, quiet):
+    def __init__(self, host, port, blacklist,
+                 log_access, log_err, no_blacklist, auto_blacklist, quiet):
 
         self.host = host
         self.port = port
@@ -78,6 +82,7 @@ class ProxyServer:
         Parameters:
             **kwargs: Any arguments accepted by the built-in print() function.
         """
+
         if not self.quiet:
             print(*args, **kwargs)
 
@@ -127,6 +132,7 @@ class ProxyServer:
         """
         Load the blacklist from the specified file.
         """
+
         if self.no_blacklist or self.auto_blacklist:
             return
         if not os.path.exists(self.blacklist):
@@ -147,6 +153,7 @@ class ProxyServer:
         protocol handler. The server is then started with the `serve_forever`
         method.
         """
+
         self.print_banner()
         if not self.quiet:
             asyncio.create_task(self.display_stats())
@@ -167,6 +174,7 @@ class ProxyServer:
         """
         Print a banner with the NoDPI logo and information about the proxy.
         """
+
         self.print(
             '''
 \033[92m ██████   █████          ██████████   ███████████  █████
@@ -205,6 +213,7 @@ class ProxyServer:
         """
         Display the current statistics of the proxy server.
         """
+
         while True:
             await asyncio.sleep(1)
             current_time = time.time()
@@ -350,7 +359,7 @@ class ProxyServer:
                     ),
                 ]
             )
-        except Exception as e:
+        except Exception:
             try:
                 writer.write(b"HTTP/1.1 500 Internal Server Error\r\n\r\n")
                 await writer.drain()
@@ -360,8 +369,10 @@ class ProxyServer:
                 host_err = host
             except Exception:
                 host_err = "Unknown"
-            self.logger.error(str(host_err.decode()) +
-                              ": " + traceback.format_exc())
+
+            self.logger.error("%s: %s", host_err.decode(),
+                              traceback.format_exc())
+
             writer.close()
 
     async def pipe(self, reader, writer, direction, conn_key):
@@ -378,6 +389,7 @@ class ProxyServer:
             direction (str): The direction of the transfer (in or out)
             conn_key (tuple): The connection key
         """
+
         try:
             while not reader.at_eof() and not writer.is_closing():
                 data = await reader.read(1500)
@@ -392,10 +404,10 @@ class ProxyServer:
                             conn_info.traffic_in += len(data)
                 writer.write(data)
                 await writer.drain()
-        except Exception as e:
+        except Exception:
             host_err = conn_info.dst_domain
-            self.logger.error(str(host_err.decode()) +
-                              ": " + traceback.format_exc())
+            self.logger.error("%s: %s", host_err.decode(),
+                              traceback.format_exc())
         finally:
             writer.close()
             async with self.connections_lock:
@@ -420,10 +432,11 @@ class ProxyServer:
             reader (asyncio.StreamReader): The reader to read from
             writer (asyncio.StreamWriter): The writer to write to
         """
+
         try:
             head = await reader.read(5)
             data = await reader.read(2048)
-        except Exception as e:
+        except Exception:
             self.logger.error(traceback.format_exc())
             return
 
@@ -464,6 +477,7 @@ class ProxyServer:
         This function closes the server and cancels all tasks running on the
         event loop. If a server is not running, the function does nothing.
         """
+
         if self.server:
             self.server.close()
             await self.server.wait_closed()
@@ -516,7 +530,11 @@ class ProxyApplication:
 
     @staticmethod
     def manage_autostart(action="install"):
-        """Manage proxy autostart on Windows"""
+        """ Manage proxy autostart on Windows
+
+            Parameters:
+                action (str): "install" or "uninstall"
+        """
 
         if sys.platform != "win32":
             print(
@@ -557,6 +575,9 @@ class ProxyApplication:
 
     @classmethod
     async def run(cls):
+        """
+        Run the proxy server
+        """
 
         logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
