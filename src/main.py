@@ -2,23 +2,25 @@
 
 import argparse
 import asyncio
-import random
 import logging
 import os
-import sys
-from urllib.request import urlopen, Request
-from urllib.error import URLError
+import random
 import ssl
-from datetime import datetime
+import sys
+import textwrap
 import time
 import traceback
+
+from urllib.error import URLError
+from datetime import datetime
+from urllib.request import urlopen, Request
+
+if sys.platform == "win32":
+    import winreg
 
 __version__ = "1.9"
 
 os.system("")
-
-if sys.platform == "win32":
-    import winreg
 
 
 class ConnectionInfo:
@@ -154,7 +156,7 @@ class ProxyServer:
         method.
         """
 
-        self.print_banner()
+        self.print_info()
         if not self.quiet:
             asyncio.create_task(self.display_stats())
         try:
@@ -170,10 +172,31 @@ class ProxyServer:
         asyncio.create_task(self.cleanup_tasks())
         await self.server.serve_forever()
 
-    def print_banner(self):
+    def print_info(self):
         """
         Print a banner with the NoDPI logo and information about the proxy.
         """
+        if sys.platform == "win32":
+            os.system("mode con: cols=130")
+
+        console_width = os.get_terminal_size().columns
+        disclaimer = """DISCLAIMER. The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages. The developer and/or supplier of this software shall not be liable for any legal consequences arising out of the use of this software. This includes, but is not limited to, violation of laws, rules or regulations, as well as any claims or suits arising out of the use of this software. The user is solely responsible for compliance with all applicable laws and regulations when using this software."""
+        wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
+
+        left_padding = (console_width - 76) // 2
+        border = '\033[91m' + ' ' * left_padding + \
+            '+' + '-' * 72 + '+' + '\033[0m'
+
+        self.print(border)
+
+        for line in wrapped_text:
+            padded_line = line.ljust(70)
+            print('\033[91m' + ' ' * left_padding +
+                  '| ' + padded_line + ' |' + '\033[0m', flush=True)
+
+        self.print(border)
+        time.sleep(2)
+        self.print('\033[2J\033[H')
 
         self.print(
             '''
