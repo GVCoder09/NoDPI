@@ -33,7 +33,7 @@ class ConnectionInfo:
 
 class ProxyServer:
 
-    def __init__(self, host, port, blacklist, log_access, log_err, no_blacklist, auto_blacklist, quiet, verbose):
+    def __init__(self, host, port, blacklist, log_access, log_err, no_blacklist, auto_blacklist, quiet):
 
         self.host = host
         self.port = port
@@ -43,7 +43,6 @@ class ProxyServer:
         self.no_blacklist = no_blacklist
         self.auto_blacklist = auto_blacklist
         self.quiet = quiet
-        self.verbose = verbose
 
         self.logger = logging.getLogger(__name__)
         self.logging_errors = None
@@ -363,9 +362,6 @@ class ProxyServer:
                 host_err = "Unknown"
             self.logger.error(str(host_err.decode()) +
                               ": " + traceback.format_exc())
-            if self.verbose:
-                self.print(
-                    f"\033[93m[DEBUG]:\033[97m {host_err.decode()}: {e}\033[0m")
             writer.close()
 
     async def pipe(self, reader, writer, direction, conn_key):
@@ -379,7 +375,8 @@ class ProxyServer:
         Parameters:
             reader (asyncio.StreamReader): The reader to read from
             writer (asyncio.StreamWriter): The writer to write to
-            verbose (bool): Whether to print non-critical errors
+            direction (str): The direction of the transfer (in or out)
+            conn_key (tuple): The connection key
         """
         try:
             while not reader.at_eof() and not writer.is_closing():
@@ -399,9 +396,6 @@ class ProxyServer:
             host_err = conn_info.dst_domain
             self.logger.error(str(host_err.decode()) +
                               ": " + traceback.format_exc())
-            if self.verbose:
-                self.print(
-                    f"\033[93m[DEBUG]:\033[97m {host_err.decode()}: {e}\033[0m")
         finally:
             writer.close()
             async with self.connections_lock:
@@ -431,8 +425,6 @@ class ProxyServer:
             data = await reader.read(2048)
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            if self.verbose:
-                self.print(f"\033[93m[DEBUG]:\033[97m {e}\033[0m")
             return
 
         if not self.no_blacklist and all(site not in data for site in self.blocked):
@@ -506,12 +498,6 @@ class ProxyApplication:
         )
         parser.add_argument(
             "-q", "--quiet", action="store_true", help="Remove UI output"
-        )
-        parser.add_argument(
-            "-v",
-            "--verbose",
-            action="store_true",
-            help="Show more info (only for devs)",
         )
 
         autostart_group = parser.add_mutually_exclusive_group()
@@ -597,7 +583,6 @@ class ProxyApplication:
             args.no_blacklist,
             args.autoblacklist,
             args.quiet,
-            args.verbose,
         )
 
         try:
