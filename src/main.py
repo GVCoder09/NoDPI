@@ -540,7 +540,7 @@ class ConnectionHandler(IConnectionHandler):
                 )
 
         except Exception as e:
-            await self._handle_connection_error(writer, e)
+            await self._handle_connection_error(writer, conn_key)
 
     def _parse_http_request(self, http_data: bytes) -> Tuple[bytes, bytes, int]:
         """Parse HTTP request to extract method, host and port"""
@@ -629,7 +629,8 @@ class ConnectionHandler(IConnectionHandler):
             head = await reader.read(5)
             data = await reader.read(2048)
         except Exception:
-            self.logger.log_error(traceback.format_exc())
+            self.logger.log_error(
+                f"{host.decode()} : {traceback.format_exc()}")
             return
 
         should_fragment = True
@@ -734,7 +735,8 @@ class ConnectionHandler(IConnectionHandler):
                 await writer.drain()
 
         except Exception:
-            self.logger.log_error(f"Pipe error: {traceback.format_exc()}")
+            self.logger.log_error(
+                f"{conn_info.dst_domain} : {traceback.format_exc()}")
         finally:
             try:
                 writer.close()
@@ -750,7 +752,7 @@ class ConnectionHandler(IConnectionHandler):
                     )
 
     async def _handle_connection_error(
-        self, writer: asyncio.StreamWriter, error: Exception
+        self, writer: asyncio.StreamWriter, conn_key: Tuple
     ) -> None:
         """Handle connection errors"""
 
@@ -763,9 +765,13 @@ class ConnectionHandler(IConnectionHandler):
         except Exception:
             pass
 
+        async with self.connections_lock:
+            conn_info = self.active_connections.pop(conn_key, None)
+
         self.statistics.increment_total_connections()
         self.statistics.increment_error_connections()
-        self.logger.log_error(traceback.format_exc())
+        self.logger.log_error(
+            f"{conn_info.dst_domain} : {traceback.format_exc()}")
 
         try:
             writer.close()
