@@ -210,8 +210,8 @@ class ProxyServer:
 
         for line in wrapped_text:
             padded_line = line.ljust(70)
-            print('\033[91m' + ' ' * left_padding +
-                  '║ ' + padded_line + ' ║' + '\033[0m', flush=True)
+            self.print('\033[91m' + ' ' * left_padding +
+                       '║ ' + padded_line + ' ║' + '\033[0m', flush=True)
 
         self.print('\033[91m' + ' ' * left_padding +
                    '╚' + '═' * 72 + '╝' + '\033[0m')
