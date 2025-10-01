@@ -942,9 +942,8 @@ class ProxyServer:
             self.server.close()
             await self.server.wait_closed()
 
-        async with self.connection_handler.tasks_lock:
-            for task in self.connection_handler.tasks:
-                task.cancel()
+        for task in self.connection_handler.tasks:
+            task.cancel()
 
 
 class BlacklistManagerFactory:
