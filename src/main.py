@@ -988,7 +988,7 @@ class WindowsAutostartManager:
         exe_path = sys.executable
 
         try:
-            key = winreg.HKEY_CURRENT_USER #pylint: disable=possible-used-before-assignment
+            key = winreg.HKEY_CURRENT_USER  # pylint: disable=possibly-used-before-assignment
             reg_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
             if action == "install":
@@ -1108,7 +1108,8 @@ class ProxyApplication:
             await proxy.run()
         except asyncio.CancelledError:
             await proxy.shutdown()
-            logger.info("\n\n\033[92m[INFO]:\033[97m Shutting down proxy...")
+            logger.info(
+                "\n"*6 + "\033[92m[INFO]:\033[97m Shutting down proxy...")
             try:
                 sys.exit(0)
             except asyncio.CancelledError:
