@@ -38,11 +38,12 @@ class ConnectionInfo:
 class ProxyServer:
     """ Class to handle the proxy server """
 
-    def __init__(self, host, port, blacklist,
-                 log_access, log_err, no_blacklist, auto_blacklist, quiet):
+    def __init__(self, host, port, out_host,
+                 blacklist, log_access, log_err, no_blacklist, auto_blacklist, quiet):
 
         self.host = host
         self.port = port
+        self.out_host = out_host
         self.blacklist = blacklist
         self.log_access_file = log_access
         self.log_err_file = log_err
@@ -314,7 +315,6 @@ class ProxyServer:
                     col_width) + "\033[97m| "
                 f"\033[97mErrors: \033[91m{self.errors_connections}\033[0m".ljust(
                     col_width)
-
             )
 
             traffic_stat = (
@@ -331,7 +331,6 @@ class ProxyServer:
                 f"\033[97mAVG DL: \033[96m{self.format_speed(self.average_speed_in[0] / self.average_speed_in[1])}\033[0m".ljust(col_width) + "\033[97m| " +
                 f"\033[97mAVG UL: \033[96m{self.format_speed(self.average_speed_out[0] / self.average_speed_out[1])}\033[0m".ljust(
                     col_width)
-
             )
 
             title = "STATISTICS"
@@ -439,13 +438,13 @@ class ProxyServer:
                 await writer.drain()
 
                 remote_reader, remote_writer = await asyncio.open_connection(
-                    host.decode(), port
+                    host.decode(), port, local_addr=(self.out_host, 0)
                 )
 
                 await self.fragment_data(reader, remote_writer)
             else:
                 remote_reader, remote_writer = await asyncio.open_connection(
-                    host.decode(), port
+                    host.decode(), port, local_addr=(self.out_host, 0)
                 )
                 remote_writer.write(http_data)
                 await remote_writer.drain()
@@ -597,6 +596,8 @@ class ProxyApplication:
         parser.add_argument("--host", default="127.0.0.1", help="Proxy host")
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
+        parser.add_argument("--out_host", default="127.0.0.1",
+                            help="Outgoing proxy host")
 
         blacklist_group = parser.add_mutually_exclusive_group()
         blacklist_group.add_argument(
@@ -703,6 +704,7 @@ class ProxyApplication:
         proxy = ProxyServer(
             args.host,
             args.port,
+            args.out_host,
             args.blacklist,
             args.log_access,
             args.log_error,
