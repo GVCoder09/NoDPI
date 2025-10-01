@@ -57,12 +57,15 @@ class ProxyServer:
         self.total_connections = 0
         self.allowed_connections = 0
         self.blocked_connections = 0
+        self.errors_connections = 0
         self.traffic_in = 0
         self.traffic_out = 0
         self.last_traffic_in = 0
         self.last_traffic_out = 0
         self.speed_in = 0
         self.speed_out = 0
+        self.average_speed_in = (0, 1)
+        self.average_speed_out = (0, 1)
         self.last_time = None
 
         self.active_connections = {}
@@ -98,9 +101,24 @@ class ProxyServer:
         %Y-%m-%d %H:%M:%S.
         """
 
+        class ErrorCounterHandler(logging.FileHandler):
+            """ Handler for logging errors """
+
+            def __init__(self, counter_callback, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.counter_callback = counter_callback
+
+            def emit(self, record):
+                if record.levelno >= logging.ERROR:
+                    self.counter_callback()
+                super().emit(record)
+
         if self.log_err_file:
-            self.logging_errors = logging.FileHandler(self.log_err_file,
-                                                      encoding='utf-8')
+            self.logging_errors = ErrorCounterHandler(
+                lambda: setattr(self, 'errors_connections',
+                                self.errors_connections + 1),
+                self.log_err_file, encoding='utf-8'
+            )
             self.logging_errors.setFormatter(
                 logging.Formatter(
                     "[%(asctime)s][%(levelname)s]: %(message)s", "%Y-%m-%d %H:%M:%S"
@@ -176,36 +194,37 @@ class ProxyServer:
         """
         Print a banner with the NoDPI logo and information about the proxy.
         """
+
         if sys.platform == "win32":
-            os.system("mode con: cols=130")
+            os.system("mode con: lines=35")
 
         console_width = os.get_terminal_size().columns
         disclaimer = """DISCLAIMER. The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages. The developer and/or supplier of this software shall not be liable for any legal consequences arising out of the use of this software. This includes, but is not limited to, violation of laws, rules or regulations, as well as any claims or suits arising out of the use of this software. The user is solely responsible for compliance with all applicable laws and regulations when using this software."""
         wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
 
         left_padding = (console_width - 76) // 2
-        border = '\033[91m' + ' ' * left_padding + \
-            '+' + '-' * 72 + '+' + '\033[0m'
 
-        self.print(border)
+        self.print('\033[91m' + ' ' * left_padding +
+                   '╔' + '═' * 72 + '╗' + '\033[0m')
 
         for line in wrapped_text:
             padded_line = line.ljust(70)
             print('\033[91m' + ' ' * left_padding +
-                  '| ' + padded_line + ' |' + '\033[0m', flush=True)
+                  '║ ' + padded_line + ' ║' + '\033[0m', flush=True)
 
-        self.print(border)
-        time.sleep(2)
+        self.print('\033[91m' + ' ' * left_padding +
+                   '╚' + '═' * 72 + '╝' + '\033[0m')
+        time.sleep(1)
         self.print('\033[2J\033[H')
 
         self.print(
             '''
 \033[92m ██████   █████          ██████████   ███████████  █████
-░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███ 
- ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███ 
- ░███░░███░███  ███░░███ ░███    ░███ ░██████████  ░███ 
- ░███ ░░██████ ░███ ░███ ░███    ░███ ░███░░░░░░   ░███ 
- ░███  ░░█████ ░███ ░███ ░███    ███  ░███         ░███ 
+░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███
+ ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███
+ ░███░░███░███  ███░░███ ░███    ░███ ░██████████  ░███
+ ░███ ░░██████ ░███ ░███ ░███    ░███ ░███░░░░░░   ░███
+ ░███  ░░█████ ░███ ░███ ░███    ███  ░███         ░███
  █████  ░░█████░░██████  ██████████   █████        █████
 ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░\033[0m
         '''
@@ -215,22 +234,45 @@ class ProxyServer:
             "\033[97m" +
             "Enjoy watching! / Наслаждайтесь просмотром!".center(50)
         )
-        self.print(f"Proxy is running on {self.host}:{self.port}".center(50))
+
         self.print("\n")
         self.print(
-            f"\033[92m[INFO]:\033[97m Proxy started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            f"\033[92m[INFO]:\033[97m Proxy is running on {self.host}:{self.port} at {datetime.now().strftime('%H:%M on %Y-%m-%d')}"
         )
-        if not self.no_blacklist and not self.auto_blacklist:
+
+        self.print()
+        if self.no_blacklist:
+            self.print(
+                "\033[92m[INFO]:\033[97m Blacklist is disabled. All domains will be subject to unblocking.")
+        elif self.auto_blacklist:
+            self.print(
+                "\033[92m[INFO]:\033[97m Auto-blacklist is enabled")
+        else:
             self.print(
                 f"\033[92m[INFO]:\033[97m Blacklist contains {len(self.blocked)} domains"
             )
-        self.print(
-            "\033[92m[INFO]:\033[97m To stop the proxy, press Ctrl+C twice")
+            self.print(
+                f"\033[92m[INFO]:\033[97m Path to blacklist: '{self.blacklist}'"
+            )
+
+        self.print()
         if self.log_err_file:
             self.print(
-                "\033[92m[INFO]:\033[97m Logging is in progress. You can see the list of errors in the file "
-                f"{self.log_err_file}"
+                f"\033[92m[INFO]:\033[97m Error logging is enabled. Path to error log: '{self.log_err_file}'"
             )
+        else:
+            self.print("\033[92m[INFO]:\033[97m Error logging is disabled")
+        if self.log_access_file:
+            self.print(
+                f"\033[92m[INFO]:\033[97m Access logging is enabled. Path to access log: '{self.log_access_file}'"
+            )
+        else:
+            self.print("\033[92m[INFO]:\033[97m Access logging is disabled")
+
+        self.print()
+        self.print(
+            "\033[92m[INFO]:\033[97m To stop the proxy, press Ctrl+C twice")
+        self.print()
 
     async def display_stats(self):
         """
@@ -248,22 +290,62 @@ class ProxyServer:
                 self.speed_out = (
                     (self.traffic_out - self.last_traffic_out) * 8 / time_diff
                 )
+                if self.speed_in > 0:
+                    self.average_speed_in = (
+                        self.average_speed_in[0] + self.speed_in,
+                        self.average_speed_in[1] + 1,
+                    )
+                if self.speed_out > 0:
+                    self.average_speed_out = (
+                        self.average_speed_out[0] + self.speed_out,
+                        self.average_speed_out[1] + 1,
+                    )
 
             self.last_traffic_in = self.traffic_in
             self.last_traffic_out = self.traffic_out
             self.last_time = current_time
 
-            stats = (
-                f"\033[92m[STATS]:\033[0m "
-                f"\033[97mConns: \033[93m{self.total_connections}\033[0m | "
-                f"\033[97mMiss: \033[92m{self.allowed_connections}\033[0m | "
-                f"\033[97mUnblock: \033[91m{self.blocked_connections}\033[0m | "
-                f"\033[97mDL: \033[96m{self.format_size(self.traffic_in)}\033[0m | "
-                f"\033[97mUL: \033[96m{self.format_size(self.traffic_out)}\033[0m | "
-                f"\033[97mSpeed DL: \033[96m{self.format_speed(self.speed_in)}\033[0m | "
-                f"\033[97mSpeed UL: \033[96m{self.format_speed(self.speed_out)}\033[0m"
+            col_width = 30
+
+            conns_stat = (
+                f"\033[97mTotal: \033[93m{self.total_connections}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mMiss: \033[96m{self.allowed_connections}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mUnblock: \033[92m{self.blocked_connections}\033[0m".ljust(
+                    col_width) + "\033[97m| "
+                f"\033[97mErrors: \033[91m{self.errors_connections}\033[0m".ljust(
+                    col_width)
+
             )
-            self.print("\u001b[2K" + stats, end="\r", flush=True)
+
+            traffic_stat = (
+                f"\033[97mTotal: \033[96m{self.format_size(self.traffic_out + self.traffic_in)}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mDL: \033[96m{self.format_size(self.traffic_in)}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mUL: \033[96m{self.format_size(self.traffic_out)}\033[0m".ljust(
+                    col_width) + "\033[97m| "
+            )
+
+            speed_stat = (
+                f"\033[97mDL: \033[96m{self.format_speed(self.speed_in)}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mUL: \033[96m{self.format_speed(self.speed_out)}\033[0m".ljust(
+                    col_width) + "\033[97m| " +
+                f"\033[97mAVG DL: \033[96m{self.format_speed(self.average_speed_in[0] / self.average_speed_in[1])}\033[0m".ljust(col_width) + "\033[97m| " +
+                f"\033[97mAVG UL: \033[96m{self.format_speed(self.average_speed_out[0] / self.average_speed_out[1])}\033[0m".ljust(
+                    col_width)
+
+            )
+
+            title = "STATISTICS"
+
+            top_border = f"\033[92m{'═' * 36} {title} {'═' * 36}\033[0m"
+            line_conns = f"\033[92m   {'Conns'.ljust(8)}:\033[0m {conns_stat}\033[0m"
+            line_traffic = f"\033[92m   {'Traffic'.ljust(8)}:\033[0m {traffic_stat}\033[0m"
+            line_speed = f"\033[92m   {'Speed'.ljust(8)}:\033[0m {speed_stat}\033[0m"
+            bottom_border = f"\033[92m{'═' * (36*2+len(title)+2)}\033[0m"
+
+            stats_block = f"{top_border}\n{line_conns}\n{line_traffic}\n{line_speed}\n{bottom_border}"
+
+            self.print(stats_block)
+            self.print("\u001b[1F"*5, end="")
 
     @staticmethod
     def format_size(size):
@@ -279,13 +361,13 @@ class ProxyServer:
 
     @staticmethod
     def format_speed(speed_bps):
-        units = ["bps", "Kbps", "Mbps", "Gbps"]
+        units = ["b/s", "Kb/s", "Mb/s", "Gb/s"]
         unit = 0
         speed = speed_bps
         while speed >= 1000 and unit < len(units) - 1:
             speed /= 1000
             unit += 1
-        return f"{speed:.1f} {units[unit]}"
+        return f"{speed:.0f} {units[unit]}"
 
     async def cleanup_tasks(self):
         while True:
