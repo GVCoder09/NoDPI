@@ -299,17 +299,17 @@ class ProxyLogger(ILogger):
         """Log error message"""
         self.logger.error(message)
 
-    def info(self, message: str) -> None:
+    def info(self, *args, **kwargs) -> None:
         """Print info message if not quiet"""
 
         if not self.quiet:
-            print(message)
+            print(*args, **kwargs)
 
-    def error(self, message: str) -> None:
+    def error(self, *args, **kwargs) -> None:
         """Print error message if not quiet"""
 
         if not self.quiet:
-            print(message)
+            print(*args, **kwargs)
 
 
 class Statistics(IStatistics):
@@ -838,7 +838,7 @@ class ProxyServer:
             "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
         )
         time.sleep(1)
-        os.system("cls" if sys.platform == "win32" else "clear")
+        self.logger.info('\033[2J\033[H')
 
         self.logger.info(
             """
