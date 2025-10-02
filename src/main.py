@@ -16,6 +16,7 @@ from datetime import datetime
 from urllib.request import urlopen, Request
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple, Optional
+from pathlib import Path
 
 if sys.platform == "win32":
     import winreg
@@ -130,6 +131,15 @@ class IConnectionHandler(ABC):
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         """Handle incoming connection"""
+
+
+class IAutostartManager(ABC):
+    """Interface for autostart management"""
+
+    @staticmethod
+    @abstractmethod
+    def manage_autostart(action: str) -> None:
+        """Manage autostart"""
 
 
 class FileBlacklistManager(IBlacklistManager):
@@ -982,16 +992,12 @@ class ConfigLoader:
         return config
 
 
-class WindowsAutostartManager:
+class WindowsAutostartManager(IAutostartManager):
     """Manages Windows autostart registry entries"""
 
     @staticmethod
     def manage_autostart(action: str = "install") -> None:
         """Manages Windows autostart registry entries"""
-
-        if sys.platform != "win32":
-            print("\033[91m[ERROR]:\033[97m Autostart only available on Windows")
-            return
 
         app_name = "NoDPIProxy"
         exe_path = sys.executable
@@ -1024,6 +1030,52 @@ class WindowsAutostartManager:
             print("\033[91m[ERROR]: Access denied. Run as administrator\033[0m")
         except Exception as e:
             print(f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
+
+
+class LinuxAutostartManager(IAutostartManager):
+
+    def manage_autostart(self, action: str = "install") -> None:
+        """Manages Linux autostart"""
+
+        app_name = "NoDPIProxy"
+        exec_path = sys.executable
+
+        if action == "install":
+            try:
+                autostart_dir = Path.home() / ".config" / "autostart"
+                autostart_dir.mkdir(parents=True, exist_ok=True)
+
+                desktop_file = autostart_dir / f"{app_name}.desktop"
+
+                desktop_content = ("[Desktop Entry]"
+                                   "\nType=Application"
+                                   f"\nName={app_name}"
+                                   f"\nExec={exec_path} --blacklist '{os.path.dirname(exec_path)}/blacklist.txt'"
+                                   "\nHidden=false"
+                                   "\nNoDisplay=false"
+                                   "\nX-GNOME-Autostart-enabled=true")
+
+                with open(desktop_file, "w", encoding="utf-8") as f:
+                    f.write(desktop_content)
+
+                print(
+                    f"\033[92m[INFO]:\033[97m Added to autostart: {exec_path}")
+
+            except Exception as e:
+                print(
+                    f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
+
+        elif action == "uninstall":
+            autostart_dir = Path.home() / ".config" / "autostart"
+            desktop_file = autostart_dir / f"{app_name}.desktop"
+
+            if desktop_file.exists():
+                try:
+                    desktop_file.unlink()
+                    print("\033[92m[INFO]:\033[97m Removed from autostart")
+                except Exception as e:
+                    print(
+                        f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
 
 
 class ProxyApplication:
@@ -1070,12 +1122,12 @@ class ProxyApplication:
         autostart_group.add_argument(
             "--install",
             action="store_true",
-            help="Add proxy to Windows autostart (only for EXE)",
+            help="Add proxy to Windows/Linux autostart (only for executable version)",
         )
         autostart_group.add_argument(
             "--uninstall",
             action="store_true",
-            help="Remove proxy from Windows autostart (only for EXE)",
+            help="Remove proxy from Windows/Linux autostart (only for executable version)",
         )
 
         return parser.parse_args()
@@ -1091,13 +1143,19 @@ class ProxyApplication:
         if args.install or args.uninstall:
             if getattr(sys, "frozen", False):
                 if args.install:
-                    WindowsAutostartManager.manage_autostart("install")
+                    if sys.platform == "win32":
+                        WindowsAutostartManager.manage_autostart("install")
+                    elif sys.platform == "linux":
+                        LinuxAutostartManager.manage_autostart("install")
                 elif args.uninstall:
-                    WindowsAutostartManager.manage_autostart("uninstall")
+                    if sys.platform == "win32":
+                        WindowsAutostartManager.manage_autostart("uninstall")
+                    elif sys.platform == "linux":
+                        LinuxAutostartManager.manage_autostart("uninstall")
                 sys.exit(0)
             else:
                 print(
-                    "\033[91m[ERROR]: Autostart works only in EXE version\033[0m")
+                    "\033[91m[ERROR]: Autostart works only in executable version\033[0m")
                 sys.exit(1)
 
         config = ConfigLoader.load_from_args(args)
