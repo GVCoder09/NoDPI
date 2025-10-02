@@ -1038,7 +1038,7 @@ class ProxyApplication:
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
         parser.add_argument(
-            "--out_host", default="127.0.0.1", help="Outgoing proxy host"
+            "--out-host", default="127.0.0.1", help="Outgoing proxy host"
         )
 
         blacklist_group = parser.add_mutually_exclusive_group()
@@ -1046,7 +1046,7 @@ class ProxyApplication:
             "--blacklist", default="blacklist.txt", help="Path to blacklist file"
         )
         blacklist_group.add_argument(
-            "--no_blacklist",
+            "--no-blacklist",
             action="store_true",
             help="Use fragmentation for all domains",
         )
@@ -1057,10 +1057,10 @@ class ProxyApplication:
         )
 
         parser.add_argument(
-            "--log_access", required=False, help="Path to the access control log"
+            "--log-access", required=False, help="Path to the access control log"
         )
         parser.add_argument(
-            "--log_error", required=False, help="Path to log file for errors"
+            "--log-error", required=False, help="Path to log file for errors"
         )
         parser.add_argument(
             "-q", "--quiet", action="store_true", help="Remove UI output"
