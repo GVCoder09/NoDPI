@@ -950,13 +950,17 @@ class BlacklistManagerFactory:
     """Factory for creating blacklist managers"""
 
     @staticmethod
-    def create(config: ProxyConfig) -> IBlacklistManager:
+    def create(config: ProxyConfig, logger: ILogger) -> IBlacklistManager:
         if config.no_blacklist:
             return NoBlacklistManager()
         if config.auto_blacklist:
             return AutoBlacklistManager(config.blacklist_file)
 
-        return FileBlacklistManager(config.blacklist_file)
+        try:
+            return FileBlacklistManager(config.blacklist_file)
+        except FileNotFoundError as e:
+            logger.error(f"\033[91m[ERROR]: {e}\033[0m")
+            sys.exit(1)
 
 
 class ConfigLoader:
@@ -1101,7 +1105,7 @@ class ProxyApplication:
         logger = ProxyLogger(
             config.log_access_file, config.log_error_file, config.quiet
         )
-        blacklist_manager = BlacklistManagerFactory.create(config)
+        blacklist_manager = BlacklistManagerFactory.create(config, logger)
         statistics = Statistics()
 
         logger.set_error_counter_callback(
