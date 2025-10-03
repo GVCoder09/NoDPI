@@ -799,7 +799,8 @@ class ConnectionHandler(IConnectionHandler):
 
                 writer.write(data)
                 await writer.drain()
-
+        except asyncio.CancelledError:
+            pass
         except Exception:
             self.logger.log_error(
                 f"{conn_info.dst_domain} : {traceback.format_exc()}")
