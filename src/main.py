@@ -48,6 +48,7 @@ class ProxyConfig:
         self.port = 8881
         self.out_host = "127.0.0.1"
         self.blacklist_file = "blacklist.txt"
+        self.domain_matching = "strict"
         self.log_access_file = None
         self.log_error_file = None
         self.no_blacklist = False
@@ -59,12 +60,8 @@ class IBlacklistManager(ABC):
     """Interface for blacklist management"""
 
     @abstractmethod
-    def is_blocked(self, domain: bytes) -> bool:
+    def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
-
-    @abstractmethod
-    def should_fragment(self, data: bytes) -> bool:
-        """Check if data contains blocked domains"""
 
     @abstractmethod
     async def check_domain(self, domain: bytes) -> None:
@@ -145,10 +142,11 @@ class IAutostartManager(ABC):
 class FileBlacklistManager(IBlacklistManager):
     """Blacklist manager that uses file-based blacklist"""
 
-    def __init__(self, blacklist_file: str):
+    def __init__(self, config: ProxyConfig):
 
-        self.blacklist_file = blacklist_file
-        self.blocked: List[bytes] = []
+        self.config = config
+        self.blacklist_file = self.config.blacklist_file
+        self.blocked: List[str] = []
         self.load_blacklist()
 
     def load_blacklist(self) -> None:
@@ -157,18 +155,30 @@ class FileBlacklistManager(IBlacklistManager):
         if not os.path.exists(self.blacklist_file):
             raise FileNotFoundError(f"File {self.blacklist_file} not found")
 
-        with open(self.blacklist_file, "r", encoding="utf-8") as f:
-            self.blocked = [line.rstrip().encode() for line in f]
+        with open(self.blacklist_file, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if len(line.strip()) < 2 or line.strip()[0] == '#':
+                    continue
+                self.blocked.append(line.strip().lower())
 
-    def is_blocked(self, domain: bytes) -> bool:
+    def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
 
-        return domain in self.blocked
+        if self.config.domain_matching == "loose":
+            for blocked_domain in self.blocked:
+                if blocked_domain in domain:
+                    return True
 
-    def should_fragment(self, data: bytes) -> bool:
-        """Check if data contains blocked domains"""
+        if domain in self.blocked:
+            return True
 
-        return any(site in data for site in self.blocked)
+        parts = domain.split('.')
+        for i in range(1, len(parts)):
+            parent_domain = '.'.join(parts[i:])
+            if parent_domain in self.blocked:
+                return True
+
+        return False
 
     async def check_domain(self, domain: bytes) -> None:
         """Not used in file-based mode"""
@@ -177,21 +187,19 @@ class FileBlacklistManager(IBlacklistManager):
 class AutoBlacklistManager(IBlacklistManager):
     """Blacklist manager that automatically detects blocked domains"""
 
-    def __init__(self, blacklist_file: str):
+    def __init__(self, config: ProxyConfig,):
 
-        self.blacklist_file = blacklist_file
-        self.blocked: List[bytes] = []
-        self.whitelist: List[bytes] = []
+        self.blacklist_file = config.blacklist_file
+        self.blocked: List[str] = []
+        self.whitelist: List[str] = []
 
-    def is_blocked(self, domain: bytes) -> bool:
+    def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
 
-        return domain in self.blocked
+        if domain in self.blocked:
+            return True
 
-    def should_fragment(self, data: bytes) -> bool:
-        """Check if data contains blocked domains"""
-
-        return any(site in data for site in self.blocked)
+        return False
 
     async def check_domain(self, domain: bytes) -> None:
         """Automatically check if domain is blocked"""
@@ -206,11 +214,11 @@ class AutoBlacklistManager(IBlacklistManager):
             context = ssl._create_unverified_context()
 
             with urlopen(req, timeout=4, context=context):
-                self.whitelist.append(domain)
+                self.whitelist.append(domain.decode())
         except URLError as e:
             reason = str(e.reason)
             if "handshake operation timed out" in reason:
-                self.blocked.append(domain)
+                self.blocked.append(domain.decode())
                 with open(self.blacklist_file, "a", encoding="utf-8") as f:
                     f.write(domain.decode() + "\n")
 
@@ -218,12 +226,8 @@ class AutoBlacklistManager(IBlacklistManager):
 class NoBlacklistManager(IBlacklistManager):
     """Blacklist manager that doesn't block anything"""
 
-    def is_blocked(self, domain: bytes) -> bool:
+    def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
-        return False
-
-    def should_fragment(self, data: bytes) -> bool:
-        """Check if data contains blocked domains"""
         return True
 
     async def check_domain(self, domain: bytes) -> None:
@@ -645,7 +649,8 @@ class ConnectionHandler(IConnectionHandler):
 
         should_fragment = True
         if not isinstance(self.blacklist_manager, NoBlacklistManager):
-            should_fragment = self.blacklist_manager.should_fragment(data)
+            should_fragment = self.blacklist_manager.is_blocked(
+                conn_info.dst_domain)
 
         if not should_fragment:
             self.statistics.increment_total_connections()
@@ -964,10 +969,10 @@ class BlacklistManagerFactory:
         if config.no_blacklist:
             return NoBlacklistManager()
         if config.auto_blacklist:
-            return AutoBlacklistManager(config.blacklist_file)
+            return AutoBlacklistManager(config)
 
         try:
-            return FileBlacklistManager(config.blacklist_file)
+            return FileBlacklistManager(config)
         except FileNotFoundError as e:
             logger.error(f"\033[91m[ERROR]: {e}\033[0m")
             sys.exit(1)
@@ -984,6 +989,7 @@ class ConfigLoader:
         config.port = args.port
         config.out_host = args.out_host
         config.blacklist_file = args.blacklist
+        config.domain_matching = args.domain_matching
         config.log_access_file = args.log_access
         config.log_error_file = args.log_error
         config.no_blacklist = args.no_blacklist
@@ -1108,6 +1114,8 @@ class ProxyApplication:
             help="Automatic detection of blocked domains",
         )
 
+        parser.add_argument("--domain-matching", default="strict",
+                            choices=["loose", "strict"], help="Domain matching mode")
         parser.add_argument(
             "--log-access", required=False, help="Path to the access control log"
         )
