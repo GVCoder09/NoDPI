@@ -48,6 +48,7 @@ class ProxyConfig:
         self.port = 8881
         self.out_host = "127.0.0.1"
         self.blacklist_file = "blacklist.txt"
+        self.fragment_method = "random"
         self.domain_matching = "strict"
         self.log_access_file = None
         self.log_error_file = None
@@ -500,16 +501,17 @@ class ConnectionHandler(IConnectionHandler):
 
     def __init__(
         self,
+        config: ProxyConfig,
         blacklist_manager: IBlacklistManager,
         statistics: IStatistics,
         logger: ILogger,
-        out_host: str,
     ):
 
+        self.config = config
         self.blacklist_manager = blacklist_manager
         self.statistics = statistics
         self.logger = logger
-        self.out_host = out_host
+        self.out_host = self.config.out_host
         self.active_connections: Dict[Tuple, ConnectionInfo] = {}
         self.connections_lock = asyncio.Lock()
         self.tasks: List[asyncio.Task] = []
@@ -630,6 +632,22 @@ class ConnectionHandler(IConnectionHandler):
 
         await self._setup_piping(reader, writer, remote_reader, remote_writer, conn_key)
 
+    def _extract_sni_position(self, data):
+        i = 0
+        while i < len(data) - 8:
+            if data[i] == 0x00 and data[i+1] == 0x00 and data[i+2] == 0x00 and \
+                    data[i+4] == 0x00 and data[i+6] == 0x00 and data[i+7] == 0x00:
+
+                ext_len = data[i+3]
+                server_name_list_len = data[i+5]
+                server_name_len = data[i+8]
+                if ext_len - server_name_list_len == 2 and server_name_list_len - server_name_len == 3:
+                    sni_start = i + 9
+                    sni_end = sni_start + server_name_len
+                    return sni_start, sni_end
+            i += 1
+        return None
+
     async def _handle_initial_tls_data(
         self,
         reader: asyncio.StreamReader,
@@ -667,25 +685,58 @@ class ConnectionHandler(IConnectionHandler):
         self.statistics.increment_blocked_connections()
 
         parts = []
-        host_end = data.find(b"\x00")
-        if host_end != -1:
-            part_data = (
-                bytes.fromhex("160304")
-                + (host_end + 1).to_bytes(2, "big")
-                + data[: host_end + 1]
-            )
-            parts.append(part_data)
-            data = data[host_end + 1:]
 
-        while data:
-            chunk_len = random.randint(1, len(data))
-            part_data = (
-                bytes.fromhex("160304")
-                + chunk_len.to_bytes(2, "big")
-                + data[:chunk_len]
-            )
-            parts.append(part_data)
-            data = data[chunk_len:]
+        if self.config.fragment_method == "sni":
+            sni_pos = self._extract_sni_position(data)
+
+            if sni_pos:
+                part_start = data[:sni_pos[0]]
+                sni_data = data[sni_pos[0]:sni_pos[1]]
+                part_end = data[sni_pos[1]:]
+                middle = (len(sni_data) + 1) // 2
+
+                parts.append(
+                    bytes.fromhex("160304") +
+                    len(part_start).to_bytes(2, "big") +
+                    part_start
+                )
+                parts.append(
+                    bytes.fromhex("160304") +
+                    len(sni_data[:middle]).to_bytes(2, "big") +
+                    sni_data[:middle]
+                )
+                parts.append(
+                    bytes.fromhex("160304") +
+                    len(sni_data[middle:]).to_bytes(2, "big") +
+                    sni_data[middle:]
+                )
+                parts.append(
+                    bytes.fromhex("160304") +
+                    len(part_end).to_bytes(2, "big") +
+                    part_end
+                )
+
+        elif self.config.fragment_method == "random":
+            print(None)
+            host_end = data.find(b"\x00")
+            if host_end != -1:
+                part_data = (
+                    bytes.fromhex("160304")
+                    + (host_end + 1).to_bytes(2, "big")
+                    + data[: host_end + 1]
+                )
+                parts.append(part_data)
+                data = data[host_end + 1:]
+
+            while data:
+                chunk_len = random.randint(1, len(data))
+                part_data = (
+                    bytes.fromhex("160304")
+                    + chunk_len.to_bytes(2, "big")
+                    + data[:chunk_len]
+                )
+                parts.append(part_data)
+                data = data[chunk_len:]
 
         combined_parts = b"".join(parts)
         writer.write(combined_parts)
@@ -819,7 +870,7 @@ class ProxyServer:
         self.statistics = statistics
         self.logger = logger
         self.connection_handler = ConnectionHandler(
-            blacklist_manager, statistics, logger, config.out_host
+            config, blacklist_manager, statistics, logger
         )
         self.server = None
 
@@ -989,6 +1040,7 @@ class ConfigLoader:
         config.port = args.port
         config.out_host = args.out_host
         config.blacklist_file = args.blacklist
+        config.fragment_method = args.fragment_method
         config.domain_matching = args.domain_matching
         config.log_access_file = args.log_access
         config.log_error_file = args.log_error
@@ -1114,8 +1166,10 @@ class ProxyApplication:
             help="Automatic detection of blocked domains",
         )
 
+        parser.add_argument("--fragment-method", default="random", choices=[
+                            "random", "sni"], help="Fragmentation method (random by default)")
         parser.add_argument("--domain-matching", default="strict",
-                            choices=["loose", "strict"], help="Domain matching mode")
+                            choices=["loose", "strict"], help="Domain matching mode (strict by default)")
         parser.add_argument(
             "--log-access", required=False, help="Path to the access control log"
         )
