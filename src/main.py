@@ -593,9 +593,6 @@ class ConnectionHandler(IConnectionHandler):
     ) -> None:
         """Handle HTTPS CONNECT request"""
 
-        writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-        await writer.drain()
-
         response_size = len(b"HTTP/1.1 200 Connection Established\r\n\r\n")
         self.statistics.update_traffic(response_size, 0)
         conn_info.traffic_in += response_size
@@ -603,6 +600,9 @@ class ConnectionHandler(IConnectionHandler):
         remote_reader, remote_writer = await asyncio.open_connection(
             host.decode(), port, local_addr=(self.out_host, 0)
         )
+
+        writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+        await writer.drain()
 
         await self._handle_initial_tls_data(reader, remote_writer, host, conn_info)
 
