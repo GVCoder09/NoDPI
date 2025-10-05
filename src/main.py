@@ -813,7 +813,7 @@ class ConnectionHandler(IConnectionHandler):
                 conn_info = self.active_connections.pop(conn_key, None)
                 if conn_info:
                     self.logger.log_access(
-                        f"{conn_info.start_time} {conn_info.src_ip} {conn_info.method} {conn_info.dst_domain}"
+                        f"{conn_info.start_time} {conn_info.src_ip} {conn_info.method} {conn_info.dst_domain} {conn_info.traffic_in} {conn_info.traffic_out}"
                     )
 
     async def _handle_connection_error(
