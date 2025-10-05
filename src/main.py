@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""
+NoDPI
+=====
+
+NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system
+"""
+
 import argparse
 import asyncio
 import logging
@@ -11,12 +18,12 @@ import textwrap
 import time
 import traceback
 
-from urllib.error import URLError
-from datetime import datetime
-from urllib.request import urlopen, Request
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Optional
+from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Tuple, Optional
+from urllib.error import URLError
+from urllib.request import urlopen, Request
 
 if sys.platform == "win32":
     import winreg
@@ -552,10 +559,10 @@ class ConnectionHandler(IConnectionHandler):
                 )
             else:
                 await self._handle_http_connection(
-                    reader, writer, http_data, host, port, conn_key, conn_info
+                    reader, writer, http_data, host, port, conn_key
                 )
 
-        except Exception as e:
+        except Exception:
             await self._handle_connection_error(writer, conn_key)
 
     def _parse_http_request(self, http_data: bytes) -> Tuple[bytes, bytes, int]:
@@ -616,7 +623,6 @@ class ConnectionHandler(IConnectionHandler):
         host: bytes,
         port: int,
         conn_key: Tuple,
-        conn_info: ConnectionInfo,
     ) -> None:
         """Handle HTTP request"""
 
@@ -1097,7 +1103,8 @@ class WindowsAutostartManager(IAutostartManager):
 
 class LinuxAutostartManager(IAutostartManager):
 
-    def manage_autostart(self, action: str = "install") -> None:
+    @staticmethod
+    def manage_autostart(action: str = "install") -> None:
         """Manages Linux autostart"""
 
         app_name = "NoDPIProxy"
