@@ -879,6 +879,8 @@ class ProxyServer:
     def print_banner(self) -> None:
         """Print startup banner"""
 
+        self.logger.info("\033]0;NoDPI\007")
+
         if sys.platform == "win32":
             os.system("mode con: lines=35")
 
@@ -888,6 +890,7 @@ class ProxyServer:
 
         left_padding = (console_width - 76) // 2
 
+        self.logger.info("\n\n\n")
         self.logger.info(
             "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
         )
@@ -926,6 +929,9 @@ class ProxyServer:
         self.logger.info("\n")
         self.logger.info(
             f"\033[92m[INFO]:\033[97m Proxy is running on {self.config.host}:{self.config.port} at {datetime.now().strftime('%H:%M on %Y-%m-%d')}"
+        )
+        self.logger.info(
+            f"\033[92m[INFO]:\033[97m The selected fragmentation method: {self.config.fragment_method}"
         )
 
         self.logger.info("")
