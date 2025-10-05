@@ -635,9 +635,7 @@ class ConnectionHandler(IConnectionHandler):
     def _extract_sni_position(self, data):
         i = 0
         while i < len(data) - 8:
-            if data[i] == 0x00 and data[i+1] == 0x00 and data[i+2] == 0x00 and \
-                    data[i+4] == 0x00 and data[i+6] == 0x00 and data[i+7] == 0x00:
-
+            if all(data[i + j] == 0x00 for j in [0, 1, 2, 4, 6, 7]):
                 ext_len = data[i+3]
                 server_name_list_len = data[i+5]
                 server_name_len = data[i+8]
