@@ -1251,6 +1251,8 @@ class ProxyApplication:
             logger.info(
                 "\n"*6 + "\033[92m[INFO]:\033[97m Shutting down proxy...")
             try:
+                if sys.platform == "win32":
+                    os.system("mode con: lines=3000")
                 sys.exit(0)
             except asyncio.CancelledError:
                 pass
