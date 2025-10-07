@@ -721,7 +721,6 @@ class ConnectionHandler(IConnectionHandler):
                 )
 
         elif self.config.fragment_method == "random":
-            print(None)
             host_end = data.find(b"\x00")
             if host_end != -1:
                 part_data = (
