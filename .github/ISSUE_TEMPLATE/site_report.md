@@ -1,17 +1,16 @@
 ---
-name: Bug report / Сообщить об ошибке
+name: The site doesn't work/open / Не работает / не открывается сайт
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: related to DPI
 assignees: ''
 
 ---
 
-> [!WARNING]
-> **Please do not use this template to report broken websites unless it is clearly related to NoDPI! Use a different template / Не используйте этот шаблон, чтобы сообщать о неработающих сайтах, если только это явно не связано с NoDPI! Используйте другой шаблон.**
+**URL of site**
+Paste your url. / Вставьте URL сайта.
 
-
-**Describe the bug / Опишите ошибку**
+**Describe / Описание**
 A clear and concise description of what the bug is. / Четкое и краткое описание ошибки.
 
 **Screenshots or logs / Скриншоты или логи**
@@ -21,7 +20,6 @@ NOTE: You can enable logging with the parameter `--log-err` /
 Примечание: Вы можете включить лог параметром `--log-err`
 
 **Desktop (please complete the following information) / Пожалуйста, укажите следующую информацию:**
- - OS / Версия ОС:
  - Browser (optional) / Используемый браузер:
  - Version of NoDPI / Версия NoDPI:
  - Parameters with which the program is launched / Параметры с которыми запускается программа:
