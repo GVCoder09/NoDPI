@@ -4,45 +4,94 @@
   </p>
 </div>
 
-
 # NoDPI
-*Say NO to blocking!*
+<b><i>Say NO to blocking!</b></i>
 
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=GVCoder09.NoDPI)]()
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL3.0-yellow.svg)](https://www.gnu.org/licenses/gpl-3.0.txt)
+[![GitHub Release](https://img.shields.io/github/v/release/GVCoder09/nodpi)](https://github.com/GVCoder09/NoDPI)
+[![Github All Releases](https://img.shields.io/github/downloads/GVCoder09/nodpi/total.svg)](https://github.com/remittor/zapret-openwrt/releases)
+[![Github Latest Release](https://img.shields.io/github/downloads/GVCoder09/nodpi/latest/total.svg)](https://github.com/remittor/zapret-openwrt/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Forks](https://img.shields.io/github/forks/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Last commit](https://img.shields.io/github/last-commit/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
 
 > [!IMPORTANT]
 > This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
+> [!NOTE]
+> This version is for desktop systems. **The Android version is available here:** https://github.com/GVCoder09/NoDPI4Android
+
+**Read this in other languages / Читайте на других языках**
+- **[English](README.md)**
+- [Русский](README.ru.md)
+
+## Table of Content
+
+- [NoDPI](#nodpi)
+  - [Table of Content](#table-of-content)
+  - [Description](#description)
+    - [How does this work](#how-does-this-work)
+    - [Key advantages and features](#key-advantages-and-features)
+    - [Sites currently unavailable via NoDPI](#sites-currently-unavailable-via-nodpi)
+    - [Alternatives](#alternatives)
+  - [Terms of Use and Disclaimer](#terms-of-use-and-disclaimer)
+  - [Quick start](#quick-start)
+    - [Add to startup in Windows and Linux](#add-to-startup-in-windows-and-linux)
+    - [Supported arguments](#supported-arguments)
+  - [Run from source code](#run-from-source-code)
+  - [Building the executable](#building-the-executable)
+  - [Running in Docker](#running-in-docker)
+  - [FAQ](#faq)
+  - [Star History](#star-history)
+
+## Description
+
+ NoDPI is a utility designed to bypass DPI (Deep Packet Inspection). What is DPI? DPI is a technology for inspecting network packets based on their content to regulate and filter traffic. It is often used by internet service providers to censor and block access to certain web resources and protocols. The goal of this program is to "trick" DPI by modifying network packets, although in reality, this trickery is often simply a consequence of a lack of computing resources and time. 
+ 
+ This utility was developed primarily for Russian users as a simpler (but less powerful) replacement for similar tools. In most cases, it gets the job done; in particular, it allows you to use YouTube without any problems.
+
+ But unfortunately, the absolute performance of this utility cannot be guaranteed. Some sites, such as YouTube, are good to unlock, while others, as Instagram.com or Facebook.com, require completely different methods for bypassing locks, which are not yet implemented in this utility from their low-leveling and difficulty. Sometimes, the performance of certain sites can also depend on the provider - how it blocks the site and what technical means applies.
+
+[!["Screenshot"](./assets/screenshot.png)]()
+
+### How does this work
+
+NoDPI launches a proxy server on your computer through which you direct http(s) traffic. The program intercepts ClientHello of outing connections and fragments them according to one of the following methods:
+
+*Random fragmentation (by default)*
+
+Clienthello is divided into several parts of random length. Each part is glued with the prefixes of the type of Clienthello and then all this is sent in one package.
+
+*Fragmentation by SNI*
+
+In the package there is a field containing SNI record. ClientHello is divided into 4 parts: to SNI, the first and second half of SNI, and all that is after it. The title indicating the type Clienthello is attached to each part and then all this is sent in one bag.
+
+Also regardless of the method, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock. Apparently DPI does not yet have the necessary capacities to unravel this "ball" and simply ignore such traffic, saving time and effort. But it is possible that soon these methods will not be workers.
+
 > [!IMPORTANT]
-> If you have experience using this utility, please support its existence by leaving your feedback on this page - https://forms.gle/qx6BJUbfgBaLbqwu6 This is very important to us!
+> NoDPI only works with HTTPS traffic. He can also take HTTP traffic, but purely for compatibility - sites working through this outdated protocol are practically not subject to unlock and the program simply sends traffic to the addressee.
 
-[**Available version for Android!**](https://github.com/GVCoder09/NoDPI4Android)
+NoDPI does not collect and does not send any data about you, does not use any third -party programs and libraries, does not interfere in the system processes and does not require administrator rights to work.
 
-## Description / Описание
-NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system. DPI is widely used by Internet providers and government agencies to block access to Internet resources. This utility allows you to bypass such blocking and freely use the Internet. In particular, it allows you to eliminate the blocking of YouTube in Russia.
+The entire NoDPI code is written exclusively on the Python and uses only its standard library.
 
-Unfortunately, I cannot guarantee the absolute functionality of the program in all conditions and with all providers, but in most cases it copes with its task perfectly.
-The utility works on the principle of an HTTP proxy. It analyzes all TLS handshakes passing through it and fragments them if they are addressed to blocked domains. Currently, DPI does not have the capacity to collect these fragments and analyze them, so NoDPI manages to "fool" it.
+### Key advantages and features
 
-The utility does not collect or send any data and does not require administrator privileges to run.
+- Open source
+- Easy to use, launch, and configure. The program has an intuitive interface. Using the utility requires no special knowledge; it can be launched by any user without administrator rights.
+- The program works with a list of blocked domains and can automatically detect blocked websites.
+- Cross-platform support ensures stable operation on Windows/Linux/MacOS. An Android version is also [available](https://github.com/gvcoder09/nodpi4android).
+- The program can be integrated into a corporate network and used by staff, rather than just an individual.
+- Supports error and access logging. You can see who visited specific websites and when.
+- Ability to add yourself to autostart on Windows/Linux
 
-The entire code is written entirely in Python and does not use third-party dependencies.
+### Sites currently unavailable via NoDPI
 
-<hr>
+As of October 2025, Instagram and Facebook were not unlockable with NoDPI. Please use [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI) by @ValdikSS. All sites blocked by IP address are also unavailable.
 
-NoDPI - это утилита для обхода системы DPI (Deep Packet Inspection). DPI широко используется интерент-провайдерами и гос. органами для блокировки доступа к интерент-ресурсам. Данная утилита позволяет обходить такие блокировки и свободно пользоваться Интернетом. В частности, она позволяет устранить блокировку YouTube в России.
+### Alternatives
 
-К сожалению, я не могу гарантировать абсолютную работоспособность программы во всех условиях и у всех провайдеров, но в большинстве случаев она отлично справляется со своей задачей.
-
-Утилита работает по принципу HTTP прокси. Она анализирует все  проходящие через нее TLS handshake и фрагментирует их, если они адресованы заблокированным доменам. В настоящее время у DPI нет таких мощностей, чтобы собиртаь эти фрагменты и анализировать их, поэтому NoDPI получается ее "обмануть".
-
-Утилита не собирает и не отправляет никаких данных и не требует привелегий администратора для запуска.
-
-Весь код полностью написан на языке Python и не использует сторонних зависимостей.
-
-[![](https://habrastorage.org/r/w1560/getpro/habr/upload_files/217/1ff/871/2171ff87152a613fa85bfc83d2669469.png)]()
-
-### Alternatives / Альтернативы 
 - **[GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI)** by @ValdikSS (for Windows)
 - **[zapret](https://github.com/bol-van/zapret)** by @bol-van (for MacOS, Linux and Windows)
 - **[Green Tunnel](https://github.com/SadeghHayeri/GreenTunnel)** by @SadeghHayeri (for MacOS, Linux and Windows)
@@ -56,9 +105,10 @@ NoDPI - это утилита для обхода системы DPI (Deep Packe
 - **[ByeDPI](https://github.com/hufrea/byedpi)** for Linux/Windows + **[ByeDPIAndroid](https://github.com/dovecoteescapee/ByeDPIAndroid/)** for Android (no root)
 - **[youtubeUnblock](https://github.com/Waujito/youtubeUnblock/)** by @Waujito (for OpenWRT/Entware routers and Linux)
 
-## Terms of Use and Disclaimer / Условия использования и отказ от ответственности
-> [!IMPORTANT]
-> This provision is in addition to the license and takes precedence over it.
+## Terms of Use and Disclaimer
+
+> [!WARNING]
+> By using this software in any form or distributing it, you accept the following terms of use and disclaimer
 
 The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages.
 
@@ -70,107 +120,75 @@ This software may not be used for illegal or unlawful purposes. Any use of the s
 
 Your use of this software constitutes your agreement to the terms of this disclaimer. If you do not agree to these terms, you must stop using this software immediately.
 
-<hr>
+## Quick start
 
-> [!IMPORTANT]
-> Данное положение является дополнением к лицензии и является приоритетным по отношению к ней.
-
-Разработчик и/или поставщик данного программного обеспечения не несет никакой ответственности за любые убытки или ущерб, включая, но не ограничиваясь, прямые, косвенные, случайные, штрафные или косвенные убытки, возникшие в результате использования или невозможности использования данного программного обеспечения, даже если разработчик или поставщик были уведомлены о возможности таких убытков.
-
-Разработчик и/или поставщик данного программного обеспечения не несут ответственности за любые юридические последствия, возникшие в результате использования данного программного обеспечения. Это включает, но не ограничивается, нарушение законодательства, правил или нормативных актов, а также любые претензии или иски, возникшие в результате использования данного программного обеспечения. Пользователь несет полную ответственность за соблюдение всех применимых законов и нормативных актов при использовании данного программного обеспечения.
-
-Разработчик и/или поставщик данного программного обеспечения не несут ответственности за любые убытки или ущерб, возникшие в результате неправомерного использования данного программного обеспечения. Неправомерное использование включает, но не ограничивается, использование программного обеспечения для незаконных целей, нарушение авторских прав, патентных прав, торговых марок или других прав интеллектуальной собственности, а также использование программного обеспечения в нарушение условий лицензии данного программного обеспечения.
-
-Данное программное обеспечение не может использоваться в противоправных целях или целях, нарушающих законодательство. Любое использование программного обеспечения для незаконных действий, включая, но не ограничиваясь, мошенничество, взлом, нарушение конфиденциальности, распространение вредоносного ПО или любые другие действия, противоречащие закодательству и нормативным актам, строго запрещено. Пользователь несет полную ответственность за любые юридические последствия, возникшие в результате использования данного программного обеспечения в противоправных целях.
-
-Использование данного программного обеспечения означает ваше согласие с условиями данного отказа от ответственности. Если вы не согласны с этими условиями, вы должны немедленно прекратить использование данного программного обеспечения.
-
-## Quick start / Быстрый старт
 1) Download the latest version for your OS from [the Releases page](https://github.com/GVCoder09/NoDPI/releases) and unzip it
 2) Go to the directory with the unzipped utility and run it with the command `nodpi.exe --blacklist blacklist.txt` in Windows or `./nodpi --blacklist ./blacklist.txt` in Linux. You can replace the file `blacklist.txt` with your own file. **If the blacklist file is not specified, the program will search for the file `blacklist.txt` in the current directory by default.**
 3) In the browser or system settings, set the proxy to 127.0.0.1:8881
-4) In some browsers, you may need to disable kyber
-5) Enjoy!
+4) Enjoy!
 
 > [!IMPORTANT]
-> Don't forget to disable the proxy in your system and browser settings after closing the program!
+> Don't forget to disable the proxy in your system or browser settings after closing the program!
 
 Please report any problems and malfunctions to us on [the Issues page](https://github.com/GVCoder09/NoDPI/issues)
 
-<hr>
+### Add to startup in Windows and Linux
 
-1) [Скачайте](https://github.com/GVCoder09/NoDPI/releases) последнюю версию утилиты для вашей ОС и разархивруйте ее
-2) Перейдите в каталог с распакованной утилитой и запустите ее командой `nodpi.exe --blacklist blacklist.txt` в Windows или `./nodpi --blacklist ./blacklist.txt` в Linux. Вы можете заменить файл `blacklist.txt` своим файлом. **Если файл черного списка не указан, то программа по умолчанию будет искать файл `blacklist.txt` в текущей директории.**
-3) В настройках браузера или системы настройте прокси на 127.0.0.1:8881
-4) В некоторых браузерах может потребоваться отключение kyber
-5) Наслаждайтесь!
+> [!NOTE]
+> This option is only available in executable versions
 
-> [!IMPORTANT]
-> Не забудьте отключить прокси в настройках системы и браузера после закрытия программы!
+1) Run the command `nodpi --install`. The program will be added to startup via the Windows registry (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) or via `~/config/autostart` in Linux
+2) Restart your computer
+3) Enjoy!
 
-О всех проблемах и неполадках, пожалуйста, сообщайте нам в [Issues](https://github.com/GVCoder09/NoDPI/issues)
+### Supported arguments
 
-## Add to startup (only for Windows) / Добавление в автозагрузку (только для Windows)
-1) [Download](https://github.com/GVCoder09/NoDPI/releases) the latest version of the utility for Windows and unzip it
-2) Go to the directory with the unzipped utility. Move the `blacklist.txt` file to the same folder where the program itself is located.
-3) Run the command `nodpi.exe --install`. The program will be added to startup via the Windows registry (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`)
-4) Restart your computer
-5) Enjoy!
-
-<hr>
-
-1) [Скачайте](https://github.com/GVCoder09/NoDPI/releases) последнюю версию утилиты для Windows и разархивруйте ее
-2) Перейдите в каталог с распакованной утилитой. Переместите файл `blacklist.txt` в ту же папку, где находится сама программа
-3) Запустите команду `nodpi.exe --install`. Программа будет добавлена в автозагрузку через реестр Windows (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`)
-4) Перезагрузите компьютер
-5) Наслаждайтесь!
-
-## Supported arguments / Поддерживаемые аргументы командной строки
 ```
-usage: nodpi [-h] [--host HOST] [--port PORT] [--blacklist BLACKLIST | --no_blacklist | --autoblacklist] 
-                  [--log_access LOG_ACCESS] [--log_error LOG_ERROR] [-q] [-v] [--install | --uninstall]
+usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
+               [--fragment-method {random,sni}] [--domain-matching {loose,strict}] [--log-access LOG_ACCESS] [--log-error LOG_ERROR]
+               [-q] [--install | --uninstall]
 
 options:
   -h, --help            show this help message and exit
   --host HOST           Proxy host
   --port PORT           Proxy port
+  --out-host OUT_HOST   Outgoing proxy host
   --blacklist BLACKLIST
                         Path to blacklist file
-  --no_blacklist        Use fragmentation for all domains
+  --no-blacklist        Use fragmentation for all domains
   --autoblacklist       Automatic detection of blocked domains
-  --log_access LOG_ACCESS
+  --fragment-method {random,sni}
+                        Fragmentation method (random by default)
+  --domain-matching {loose,strict}
+                        Domain matching mode (strict by default)
+  --log-access LOG_ACCESS
                         Path to the access control log
-  --log_error LOG_ERROR
+  --log-error LOG_ERROR
                         Path to log file for errors
   -q, --quiet           Remove UI output
-  -v, --verbose         Show more info (only for devs)
-  --install             Add proxy to Windows autostart (only for EXE)
-  --uninstall           Remove proxy from Windows autostart (only for EXE)
-
+  --install             Add proxy to Windows/Linux autostart (only for executable version)
+  --uninstall           Remove proxy from Windows/Linux autostart (only for executable version)
 ```
-## Run from source code / Запуск из исходного кода
 
-1) Make sure you have Python 3.8 or higher installed. No third-party libraries are required
+## Run from source code
+
+1) Make sure you have Python 3.9 or higher installed. No third-party libraries are required
 2) Clone the repository `git clone https://github.com/GVCoder09/NoDPI.git` or [download the archive](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) with the source code and unzip it
-3) Go to the main directory and run the code with the command `python src/main.py --blacklist ./blacklist.txt`
-3) In the browser or system settings, set the proxy to 127.0.0.1:8881
-4) In some browsers, you may need to disable kyber
+3) Go to the main directory and run the code with the command `python src/main.py`
+4) In the browser or system settings, set the proxy to 127.0.0.1:8881
 5) Enjoy!
 
 You can enable error or access logging using parameters `--log_error` and `--log_access`
 
-<hr>
+## Building the executable
 
-1) Убедитесь что у вас установлен Python версии 3.8 и выше. Никакие сторонние библиотеки не требуются
-2) Клонируйте репозиторий `git clone https://github.com/GVCoder09/NoDPI.git` или [скачайте архив](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) с исходным кодом и распакуйте его
-3) Перейдите в основную директорию и запустите код командой `python src/main.py --blacklist ./blacklist.txt`
-3) В настройках браузера или системы настройте прокси на 127.0.0.1:8881
-4) В некоторых браузерах может потребоваться отключение kyber
-5) Наслаждайтесь!
+1) Make sure you have Python 3.9 or higher installed.
+2) Install pyinstaller: `pip install pyinstaller`
+3) Clone the repository `git clone https://github.com/GVCoder09/NoDPI.git` or [download the archive](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) with the source code and unzip it
+4) Go to the main directory and run the command `pyinstaller ./nodpi.spec`
+5) The compiled file will be located in ist folder `./dist`
 
-Вы можете включить логирование ошибок или доступа с помощью параметров `--log_error` и `--log_access`
-
-## Running in Docker / Запуск в Docker
+## Running in Docker
 
 1) [Install Docker](https://docs.docker.com/).
 2) Clone the repository: `git clone https://github.com/GVCoder09/NoDPI`
@@ -178,34 +196,20 @@ You can enable error or access logging using parameters `--log_error` and `--log
 4) Run the container with the command: `docker run -d -p 127.0.0.1:8881:8881 -v /path/to/blacklists/:/blacklists:ro nodpi`, where `/path/to/blacklists/` is the path to the blacklist files.
 5) Enjoy!
 
-<hr>
+## FAQ
 
-1) [Установите Docker](https://docs.docker.com/)
-2) Склонируйте репозиторий: `git clone https://github.com/GVCoder09/NoDPI`
-3) Перейдите в директорию проекта и соберите контейнер: `cd NoDPI && docker build -t nodpi .`
-4) Запустите контейнер с помощью команды: `docker run -d -p 127.0.0.1:8881:8881 -v /path/to/blacklists/:/blacklists:ro nodpi`, где `/path/to/blacklists/` путь к файлам с черными списками
-5) Наслаждайтесь!
+*Q: Is using NoDPI legal in Russia?*
 
-## Known bugs / Известные проблемы
+A: Yes, its usage is completely legal as of October 2025. However, you can be held administratively liable for advertising and distributing tools designed to circumvent blocking.
 
-- Doesn't work at all. Yes, that can happen :(
-- Doesn't bypass IP block
-- Only TCP and HTTPS (HTTP ignored)
-- Not working with sites with old TLS
+*Q: Is it safe?*
 
-<hr>
+A: Yes, using this utility is safe. All traffic sent over HTTPS remains encrypted as it was before. Furthermore, we do not collect any user information.
 
-- Не работает вообще. Да, такое может быть :(
-- Не работает, если сайт заблокирован по IP
-- Только для TCP и HTTPS (HTTP игнорируется)
-- Не работает для сайтов со старым TLS
+*Q: Does this program mask my traffic? Can my ISP not see which sites I visit?*
+
+A: No. Unlike a VPN or Tor, this program does not hide your traffic from your Internet Service Provider (ISP). Your ISP can still see the IP addresses of the websites you connect to.
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=GVCoder09/NoDPI&type=Date)](https://www.star-history.com/#GVCoder09/NoDPI&Date)
-
-## Thanks to the project participants / Благодарность участникам проекта
-
-[![Contributors](https://contrib.rocks/image?repo=GVCoder09/NoDPI)](https://github.com/GVCoder09/NoDPI/graphs/contributors)
-
-
