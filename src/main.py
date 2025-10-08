@@ -28,7 +28,7 @@ from urllib.request import urlopen, Request
 if sys.platform == "win32":
     import winreg
 
-__version__ = "2.0-beta"
+__version__ = "2.0"
 
 os.system("")
 
