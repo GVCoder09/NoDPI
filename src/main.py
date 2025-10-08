@@ -53,7 +53,7 @@ class ProxyConfig:
 
         self.host = "127.0.0.1"
         self.port = 8881
-        self.out_host = "127.0.0.1"
+        self.out_host = None
         self.blacklist_file = "blacklist.txt"
         self.fragment_method = "random"
         self.domain_matching = "strict"
@@ -605,7 +605,7 @@ class ConnectionHandler(IConnectionHandler):
         conn_info.traffic_in += response_size
 
         remote_reader, remote_writer = await asyncio.open_connection(
-            host.decode(), port, local_addr=(self.out_host, 0)
+            host.decode(), port, local_addr=(self.out_host, 0) if self.out_host else None
         )
 
         writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
@@ -627,7 +627,7 @@ class ConnectionHandler(IConnectionHandler):
         """Handle HTTP request"""
 
         remote_reader, remote_writer = await asyncio.open_connection(
-            host.decode(), port, local_addr=(self.out_host, 0)
+            host.decode(), port, local_addr=(self.out_host, 0) if self.out_host else None
         )
 
         remote_writer.write(http_data)
@@ -1159,7 +1159,7 @@ class ProxyApplication:
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
         parser.add_argument(
-            "--out-host", default="127.0.0.1", help="Outgoing proxy host"
+            "--out-host", help="Outgoing proxy host"
         )
 
         blacklist_group = parser.add_mutually_exclusive_group()
