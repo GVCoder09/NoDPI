@@ -167,10 +167,12 @@ class FileBlacklistManager(IBlacklistManager):
             for line in f:
                 if len(line.strip()) < 2 or line.strip()[0] == '#':
                     continue
-                self.blocked.append(line.strip().lower())
+                self.blocked.append(line.strip().lower().replace('www.', ''))
 
     def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
+
+        domain = domain.replace('www.', '')
 
         if self.config.domain_matching == "loose":
             for blocked_domain in self.blocked:
@@ -212,7 +214,7 @@ class AutoBlacklistManager(IBlacklistManager):
     async def check_domain(self, domain: bytes) -> None:
         """Automatically check if domain is blocked"""
 
-        if domain in self.blocked or domain in self.whitelist:
+        if domain.decode() in self.blocked or domain in self.whitelist:
             return
 
         try:
