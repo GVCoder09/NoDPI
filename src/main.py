@@ -994,7 +994,8 @@ class ProxyServer:
     async def run(self) -> None:
         """Run the proxy server"""
 
-        self.print_banner()
+        if not self.config.quiet:
+            self.print_banner()
 
         try:
             self.server = await asyncio.start_server(
