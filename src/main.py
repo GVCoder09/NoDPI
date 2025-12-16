@@ -891,7 +891,11 @@ class ProxyServer:
         if sys.platform == "win32":
             os.system("mode con: lines=35")
 
-        console_width = os.get_terminal_size().columns
+        if sys.stdout.isatty():
+            console_width = os.get_terminal_size().columns
+        else:
+            console_width = 80
+
         disclaimer = """DISCLAIMER. The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages. The developer and/or supplier of this software shall not be liable for any legal consequences arising out of the use of this software. This includes, but is not limited to, violation of laws, rules or regulations, as well as any claims or suits arising out of the use of this software. The user is solely responsible for compliance with all applicable laws and regulations when using this software."""
         wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
 
