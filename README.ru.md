@@ -171,7 +171,7 @@ options:
 
 ## Запуск из исходного кода
 
-1) Убедитесь, что у вас установлен Python 3.9 или выше. Сторонние библиотеки не требуются.
+1) Убедитесь, что у вас установлен Python 3.8 или выше. Сторонние библиотеки не требуются.
 2) Склонируйте репозиторий `git clone https://github.com/GVCoder09/NoDPI.git` или [скачайте архив](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) с исходным кодом и распакуйте его.
 3) Перейдите в корневой каталог и запустите код командой `python src/main.py`.
 4) В настройках браузера или системы установите прокси-сервер на 127.0.0.1:8881.
@@ -181,7 +181,7 @@ options:
 
 ## Сборка исполняемого файла
 
-1) Убедитесь, что у вас установлен Python 3.9 или выше.
+1) Убедитесь, что у вас установлен Python 3.8 или выше.
 2) Установите pyinstaller: `pip install pyinstaller`
 3) Клонируйте репозиторий `git clone https://github.com/GVCoder09/NoDPI.git` или [скачайте архив](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) с исходным кодом и распакуйте его.
 4) Перейдите в корневой каталог и выполните команду `pyinstaller ./nodpi.spec`
@@ -191,8 +191,23 @@ options:
 
 1) [Установите Docker](https://docs.docker.com/).
 2) Клонируйте репозиторий: `git clone https://github.com/GVCoder09/NoDPI`
-3) Перейдите в каталог проекта и соберите контейнер: `cd NoDPI && docker build -t nodpi .`
-4) Запустите контейнер командой: `docker run -d -p 127.0.0.1:8881:8881 -v /path/to/blacklists/:/blacklists:ro nodpi`, где `/path/to/blacklists/` — это путь к файлам чёрного списка.
+3) Перейдите в каталог проекта и соберите контейнер:
+   ```bash
+   cd NoDPI
+   sudo docker build -t nodpi-proxy .
+   ```
+4) Запустите контейнер командой: 
+   ```bash
+   sudo docker run -d \
+    --name nodpi \
+    -p 8881:8881 \
+    -v $(pwd)/blacklist.txt:/tmp/nodpi/blacklist.txt \
+    nodpi-proxy \
+    --host 127.0.0.1 \
+    --port 8881 \
+    --blacklist /tmp/nodpi/blacklist.txt \
+    --quiet
+    ```
 5) Наслаждайтесь!
 
 ## FAQ
