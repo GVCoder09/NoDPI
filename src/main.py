@@ -958,7 +958,7 @@ class ProxyServer:
                 f"\033[92m[INFO]:\033[97m Blacklist contains {len(self.blacklist_manager.blocked)} domains"
             )
             self.logger.info(
-                f"\033[92m[INFO]:\033[97m Path to blacklist: '{self.config.blacklist_file}'"
+                f"\033[92m[INFO]:\033[97m Path to blacklist: '{os.path.normpath(self.config.blacklist_file)}'"
             )
 
         self.logger.info("")
