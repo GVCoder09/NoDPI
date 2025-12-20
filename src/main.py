@@ -13,6 +13,7 @@ import logging
 import os
 import random
 import ssl
+import subprocess
 import sys
 import textwrap
 import time
@@ -1111,47 +1112,79 @@ class LinuxAutostartManager(IAutostartManager):
 
     @staticmethod
     def manage_autostart(action: str = "install") -> None:
-        """Manages Linux autostart"""
+        """Manages Linux autostart using systemd user services"""
 
         app_name = "NoDPIProxy"
         exec_path = sys.executable
+        service_name = f"{app_name.lower()}.service"
+
+        user_service_dir = Path.home() / ".config" / "systemd" / "user"
+        service_file = user_service_dir / service_name
+
+        blacklist_path = f"{os.path.dirname(exec_path)}/blacklist.txt"
 
         if action == "install":
             try:
-                autostart_dir = Path.home() / ".config" / "autostart"
-                autostart_dir.mkdir(parents=True, exist_ok=True)
+                user_service_dir.mkdir(parents=True, exist_ok=True)
 
-                desktop_file = autostart_dir / f"{app_name}.desktop"
+                service_content = f"""[Unit]
+Description=NoDPIProxy Service
+After=network.target graphical-session.target
+Wants=network.target
 
-                desktop_content = ("[Desktop Entry]"
-                                   "\nType=Application"
-                                   f"\nName={app_name}"
-                                   f"\nExec={exec_path} --blacklist '{os.path.dirname(exec_path)}/blacklist.txt'"
-                                   "\nHidden=false"
-                                   "\nNoDisplay=false"
-                                   "\nX-GNOME-Autostart-enabled=true")
+[Service]
+Type=simple
+ExecStart={exec_path} --blacklist "{blacklist_path}" --quiet
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
 
-                with open(desktop_file, "w", encoding="utf-8") as f:
-                    f.write(desktop_content)
+[Install]
+WantedBy=default.target
+"""
+
+                with open(service_file, "w", encoding="utf-8") as f:
+                    f.write(service_content)
+
+                subprocess.run(
+                    ["systemctl", "--user", "daemon-reload"], check=True)
+
+                subprocess.run(
+                    ["systemctl", "--user", "enable", service_name], check=True)
+                subprocess.run(["systemctl", "--user", "start",
+                               service_name], check=True)
 
                 print(
-                    f"\033[92m[INFO]:\033[97m Added to autostart: {exec_path}")
+                    f"\033[92m[INFO]:\033[97m Service installed and started: {service_name}")
+                print("\033[93m[NOTE]:\033[97m Service will auto-start on login")
 
+            except subprocess.CalledProcessError as e:
+                print(f"\033[91m[ERROR]: Systemd command failed: {e}\033[0m")
             except Exception as e:
                 print(
                     f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
 
         elif action == "uninstall":
-            autostart_dir = Path.home() / ".config" / "autostart"
-            desktop_file = autostart_dir / f"{app_name}.desktop"
+            try:
+                subprocess.run(["systemctl", "--user", "stop", service_name],
+                               capture_output=True, check=True)
+                subprocess.run(["systemctl", "--user", "disable", service_name],
+                               capture_output=True, check=True)
 
-            if desktop_file.exists():
-                try:
-                    desktop_file.unlink()
-                    print("\033[92m[INFO]:\033[97m Removed from autostart")
-                except Exception as e:
-                    print(
-                        f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
+                if service_file.exists():
+                    service_file.unlink()
+
+                subprocess.run(
+                    ["systemctl", "--user", "daemon-reload"], check=True)
+
+                print("\033[92m[INFO]:\033[97m Service removed from autostart")
+
+            except subprocess.CalledProcessError as e:
+                print(f"\033[91m[ERROR]: Systemd command failed: {e}\033[0m")
+            except Exception as e:
+                print(
+                    f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
 
 
 class ProxyApplication:
