@@ -172,7 +172,7 @@ options:
 
 ## Run from source code
 
-1) Make sure you have Python 3.7 or higher installed. No third-party libraries are required
+1) Make sure you have Python 3.8 or higher installed. No third-party libraries are required
 2) Clone the repository `git clone https://github.com/GVCoder09/NoDPI.git` or [download the archive](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) with the source code and unzip it
 3) Go to the main directory and run the code with the command `python src/main.py`
 4) In the browser or system settings, set the proxy to 127.0.0.1:8881
@@ -182,7 +182,7 @@ You can enable error or access logging using parameters `--log_error` and `--log
 
 ## Building the executable
 
-1) Make sure you have Python 3.7 or higher installed.
+1) Make sure you have Python 3.8 or higher installed.
 2) Install pyinstaller: `pip install pyinstaller`
 3) Clone the repository `git clone https://github.com/GVCoder09/NoDPI.git` or [download the archive](https://github.com/GVCoder09/NoDPI/archive/refs/heads/main.zip) with the source code and unzip it
 4) Go to the main directory and run the command `pyinstaller ./nodpi.spec`
