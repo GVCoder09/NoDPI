@@ -136,7 +136,10 @@ NoDPI не собирает и не отправляет никаких данн
 > [!NOTE]
 > Эта опция доступна только в исполняемых версиях.
 
-1) Выполните команду `nodpi --install`. Программа будет добавлена ​​в автозагрузку через реестр Windows (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) или через `~/config/autostart` в Linux.
+> [!IMPORTNAT]
+> Убедитесь, что файл `blacklist.txt` находится в одной папке с исполняемым файлом.
+
+1) Выполните команду `nodpi --install`. Программа будет добавлена ​​в автозагрузку через реестр Windows (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) или через `systemd` в Linux.
 2) Перезагрузите компьютер.
 3) Наслаждайтесь!
 

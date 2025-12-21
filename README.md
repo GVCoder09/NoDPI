@@ -137,7 +137,10 @@ Please report any problems and malfunctions to us on [the Issues page](https://g
 > [!NOTE]
 > This option is only available in executable versions
 
-1) Run the command `nodpi --install`. The program will be added to startup via the Windows registry (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) or via `~/config/autostart` in Linux
+> [!IMPORTANT]
+> Make sure the file `blacklist.txt` is located next to the executable file.
+
+1) Run the command `nodpi --install`. The program will be added to startup via the Windows registry (`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`) or via `systemd` in Linux
 2) Restart your computer
 3) Enjoy!
 
