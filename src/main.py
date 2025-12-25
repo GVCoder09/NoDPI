@@ -9,6 +9,7 @@ NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system
 
 import argparse
 import asyncio
+import json
 import logging
 import os
 import random
@@ -166,14 +167,14 @@ class FileBlacklistManager(IBlacklistManager):
 
         with open(self.blacklist_file, "r", encoding="utf-8", errors="ignore") as f:
             for line in f:
-                if len(line.strip()) < 2 or line.strip()[0] == '#':
+                if len(line.strip()) < 2 or line.strip()[0] == "#":
                     continue
-                self.blocked.append(line.strip().lower().replace('www.', ''))
+                self.blocked.append(line.strip().lower().replace("www.", ""))
 
     def is_blocked(self, domain: str) -> bool:
         """Check if domain is in blacklist"""
 
-        domain = domain.replace('www.', '')
+        domain = domain.replace("www.", "")
 
         if self.config.domain_matching == "loose":
             for blocked_domain in self.blocked:
@@ -183,9 +184,9 @@ class FileBlacklistManager(IBlacklistManager):
         if domain in self.blocked:
             return True
 
-        parts = domain.split('.')
+        parts = domain.split(".")
         for i in range(1, len(parts)):
-            parent_domain = '.'.join(parts[i:])
+            parent_domain = ".".join(parts[i:])
             if parent_domain in self.blocked:
                 return True
 
@@ -198,7 +199,10 @@ class FileBlacklistManager(IBlacklistManager):
 class AutoBlacklistManager(IBlacklistManager):
     """Blacklist manager that automatically detects blocked domains"""
 
-    def __init__(self, config: ProxyConfig,):
+    def __init__(
+        self,
+        config: ProxyConfig,
+    ):
 
         self.blacklist_file = config.blacklist_file
         self.blocked: List[str] = []
@@ -608,7 +612,9 @@ class ConnectionHandler(IConnectionHandler):
         conn_info.traffic_in += response_size
 
         remote_reader, remote_writer = await asyncio.open_connection(
-            host.decode(), port, local_addr=(self.out_host, 0) if self.out_host else None
+            host.decode(),
+            port,
+            local_addr=(self.out_host, 0) if self.out_host else None,
         )
 
         writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
@@ -630,7 +636,9 @@ class ConnectionHandler(IConnectionHandler):
         """Handle HTTP request"""
 
         remote_reader, remote_writer = await asyncio.open_connection(
-            host.decode(), port, local_addr=(self.out_host, 0) if self.out_host else None
+            host.decode(),
+            port,
+            local_addr=(self.out_host, 0) if self.out_host else None,
         )
 
         remote_writer.write(http_data)
@@ -645,10 +653,13 @@ class ConnectionHandler(IConnectionHandler):
         i = 0
         while i < len(data) - 8:
             if all(data[i + j] == 0x00 for j in [0, 1, 2, 4, 6, 7]):
-                ext_len = data[i+3]
-                server_name_list_len = data[i+5]
-                server_name_len = data[i+8]
-                if ext_len - server_name_list_len == 2 and server_name_list_len - server_name_len == 3:
+                ext_len = data[i + 3]
+                server_name_list_len = data[i + 5]
+                server_name_len = data[i + 8]
+                if (
+                    ext_len - server_name_list_len == 2
+                    and server_name_list_len - server_name_len == 3
+                ):
                     sni_start = i + 9
                     sni_end = sni_start + server_name_len
                     return sni_start, sni_end
@@ -697,30 +708,30 @@ class ConnectionHandler(IConnectionHandler):
             sni_pos = self._extract_sni_position(data)
 
             if sni_pos:
-                part_start = data[:sni_pos[0]]
-                sni_data = data[sni_pos[0]:sni_pos[1]]
+                part_start = data[: sni_pos[0]]
+                sni_data = data[sni_pos[0]: sni_pos[1]]
                 part_end = data[sni_pos[1]:]
                 middle = (len(sni_data) + 1) // 2
 
                 parts.append(
-                    bytes.fromhex("160304") +
-                    len(part_start).to_bytes(2, "big") +
-                    part_start
+                    bytes.fromhex("160304")
+                    + len(part_start).to_bytes(2, "big")
+                    + part_start
                 )
                 parts.append(
-                    bytes.fromhex("160304") +
-                    len(sni_data[:middle]).to_bytes(2, "big") +
-                    sni_data[:middle]
+                    bytes.fromhex("160304")
+                    + len(sni_data[:middle]).to_bytes(2, "big")
+                    + sni_data[:middle]
                 )
                 parts.append(
-                    bytes.fromhex("160304") +
-                    len(sni_data[middle:]).to_bytes(2, "big") +
-                    sni_data[middle:]
+                    bytes.fromhex("160304")
+                    + len(sni_data[middle:]).to_bytes(2, "big")
+                    + sni_data[middle:]
                 )
                 parts.append(
-                    bytes.fromhex("160304") +
-                    len(part_end).to_bytes(2, "big") +
-                    part_end
+                    bytes.fromhex("160304")
+                    + len(part_end).to_bytes(2, "big")
+                    + part_end
                 )
 
         elif self.config.fragment_method == "random":
@@ -881,23 +892,89 @@ class ProxyServer:
         )
         self.server = None
 
+        self.update_check_task = None
+        self.update_available = None
+        self.update_event = asyncio.Event()
+
         logger.set_error_counter_callback(
             statistics.increment_error_connections)
 
-    def print_banner(self) -> None:
+    async def check_for_updates(self):
+        """Check for updates"""
+
+        if self.config.quiet:
+            return None
+
+        try:
+            loop = asyncio.get_event_loop()
+
+            def sync_check():
+                try:
+                    req = Request(
+                        "https://gvcoder09.github.io/nodpi_site/api/v1/update_info.json",
+                    )
+                    with urlopen(req, timeout=3) as response:
+                        if response.status == 200:
+                            data = json.loads(response.read())
+                            latest_version = data.get("nodpi", "").get(
+                                "latest_version", ""
+                            )
+                            if latest_version and latest_version != __version__:
+                                return latest_version
+                except (URLError, json.JSONDecodeError, Exception):
+                    pass
+                return None
+
+            latest_version = await loop.run_in_executor(None, sync_check)
+            if latest_version:
+                self.update_available = latest_version
+                self.update_event.set()
+                return f"\033[93m[UPDATE]: Available new version: v{latest_version} \033[97m"
+        except Exception:
+            pass
+        finally:
+            self.update_event.set()
+        return None
+
+    async def print_banner(self) -> None:
         """Print startup banner"""
+
+        self.update_check_task = asyncio.create_task(self.check_for_updates())
+
+        try:
+            await asyncio.wait_for(self.update_event.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            if self.update_check_task and not self.update_check_task.done():
+                self.update_check_task.cancel()
+                try:
+                    await self.update_check_task
+                except asyncio.CancelledError:
+                    pass
 
         self.logger.info("\033]0;NoDPI\007")
 
         if sys.platform == "win32":
-            os.system("mode con: lines=35")
+            os.system("mode con: lines=33")
 
         if sys.stdout.isatty():
             console_width = os.get_terminal_size().columns
         else:
             console_width = 80
 
-        disclaimer = """DISCLAIMER. The developer and/or supplier of this software shall not be liable for any loss or damage, including but not limited to direct, indirect, incidental, punitive or consequential damages arising out of the use of or inability to use this software, even if the developer or supplier has been advised of the possibility of such damages. The developer and/or supplier of this software shall not be liable for any legal consequences arising out of the use of this software. This includes, but is not limited to, violation of laws, rules or regulations, as well as any claims or suits arising out of the use of this software. The user is solely responsible for compliance with all applicable laws and regulations when using this software."""
+        disclaimer = (
+            "DISCLAIMER. The developer and/or supplier of this software "
+            "shall not be liable for any loss or damage, including but "
+            "not limited to direct, indirect, incidental, punitive or "
+            "consequential damages arising out of the use of or inability "
+            "to use this software, even if the developer or supplier has been "
+            "advised of the possibility of such damages. The developer and/or "
+            "supplier of this software shall not be liable for any legal "
+            "consequences arising out of the use of this software. This includes, "
+            "but is not limited to, violation of laws, rules or regulations, "
+            "as well as any claims or suits arising out of the use of this software. "
+            "The user is solely responsible for compliance with all applicable laws "
+            "and regulations when using this software."
+        )
         wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
 
         left_padding = (console_width - 76) // 2
@@ -917,19 +994,28 @@ class ProxyServer:
         self.logger.info(
             "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
         )
+
         time.sleep(1)
-        self.logger.info('\033[2J\033[H')
+
+        update_message = None
+        if self.update_check_task and self.update_check_task.done():
+            try:
+                update_message = self.update_check_task.result()
+            except (asyncio.CancelledError, Exception):
+                pass
+
+        self.logger.info("\033[2J\033[H")
 
         self.logger.info(
             """
-\033[92m ██████   █████          ██████████   ███████████  █████
-░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███
- ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███
- ░███░░███░███  ███░░███ ░███    ░███ ░██████████  ░███
- ░███ ░░██████ ░███ ░███ ░███    ░███ ░███░░░░░░   ░███
- ░███  ░░█████ ░███ ░███ ░███    ███  ░███         ░███
- █████  ░░█████░░██████  ██████████   █████        █████
-░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░\033[0m
+\033[92m  ██████   █████          ██████████   ███████████  █████
+ ░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███
+  ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███
+  ░███░░███░███  ███░░███ ░███    ░███ ░██████████  ░███
+  ░███ ░░██████ ░███ ░███ ░███    ░███ ░███░░░░░░   ░███
+  ░███  ░░█████ ░███ ░███ ░███    ███  ░███         ░███
+  █████  ░░█████░░██████  ██████████   █████        █████
+ ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░\033[0m
         """
         )
         self.logger.info(f"\033[92mVersion: {__version__}".center(50))
@@ -939,6 +1025,10 @@ class ProxyServer:
         )
 
         self.logger.info("\n")
+
+        if update_message:
+            self.logger.info(update_message)
+
         self.logger.info(
             f"\033[92m[INFO]:\033[97m Proxy is running on {self.config.host}:{self.config.port} at {datetime.now().strftime('%H:%M on %Y-%m-%d')}"
         )
@@ -1000,7 +1090,7 @@ class ProxyServer:
         """Run the proxy server"""
 
         if not self.config.quiet:
-            self.print_banner()
+            await self.print_banner()
 
         try:
             self.server = await asyncio.start_server(
@@ -1151,12 +1241,15 @@ WantedBy=default.target
                     ["systemctl", "--user", "daemon-reload"], check=True)
 
                 subprocess.run(
-                    ["systemctl", "--user", "enable", service_name], check=True)
-                subprocess.run(["systemctl", "--user", "start",
-                               service_name], check=True)
+                    ["systemctl", "--user", "enable", service_name], check=True
+                )
+                subprocess.run(
+                    ["systemctl", "--user", "start", service_name], check=True
+                )
 
                 print(
-                    f"\033[92m[INFO]:\033[97m Service installed and started: {service_name}")
+                    f"\033[92m[INFO]:\033[97m Service installed and started: {service_name}"
+                )
                 print("\033[93m[NOTE]:\033[97m Service will auto-start on login")
 
             except subprocess.CalledProcessError as e:
@@ -1167,10 +1260,16 @@ WantedBy=default.target
 
         elif action == "uninstall":
             try:
-                subprocess.run(["systemctl", "--user", "stop", service_name],
-                               capture_output=True, check=True)
-                subprocess.run(["systemctl", "--user", "disable", service_name],
-                               capture_output=True, check=True)
+                subprocess.run(
+                    ["systemctl", "--user", "stop", service_name],
+                    capture_output=True,
+                    check=True,
+                )
+                subprocess.run(
+                    ["systemctl", "--user", "disable", service_name],
+                    capture_output=True,
+                    check=True,
+                )
 
                 if service_file.exists():
                     service_file.unlink()
@@ -1198,9 +1297,7 @@ class ProxyApplication:
         parser.add_argument("--host", default="127.0.0.1", help="Proxy host")
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
-        parser.add_argument(
-            "--out-host", help="Outgoing proxy host"
-        )
+        parser.add_argument("--out-host", help="Outgoing proxy host")
 
         blacklist_group = parser.add_mutually_exclusive_group()
         blacklist_group.add_argument(
@@ -1217,10 +1314,18 @@ class ProxyApplication:
             help="Automatic detection of blocked domains",
         )
 
-        parser.add_argument("--fragment-method", default="random", choices=[
-                            "random", "sni"], help="Fragmentation method (random by default)")
-        parser.add_argument("--domain-matching", default="strict",
-                            choices=["loose", "strict"], help="Domain matching mode (strict by default)")
+        parser.add_argument(
+            "--fragment-method",
+            default="random",
+            choices=["random", "sni"],
+            help="Fragmentation method (random by default)",
+        )
+        parser.add_argument(
+            "--domain-matching",
+            default="strict",
+            choices=["loose", "strict"],
+            help="Domain matching mode (strict by default)",
+        )
         parser.add_argument(
             "--log-access", required=False, help="Path to the access control log"
         )
@@ -1268,7 +1373,8 @@ class ProxyApplication:
                 sys.exit(0)
             else:
                 print(
-                    "\033[91m[ERROR]: Autostart works only in executable version\033[0m")
+                    "\033[91m[ERROR]: Autostart works only in executable version\033[0m"
+                )
                 sys.exit(1)
 
         config = ConfigLoader.load_from_args(args)
@@ -1289,7 +1395,7 @@ class ProxyApplication:
         except asyncio.CancelledError:
             await proxy.shutdown()
             logger.info(
-                "\n"*6 + "\033[92m[INFO]:\033[97m Shutting down proxy...")
+                "\n" * 6 + "\033[92m[INFO]:\033[97m Shutting down proxy...")
             try:
                 if sys.platform == "win32":
                     os.system("mode con: lines=3000")
