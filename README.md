@@ -7,7 +7,6 @@
 # NoDPI
 <b><i>Say NO to blocking!</b></i>
 
-[![GitHub Pages](https://img.shields.io/badge/Website-Live-green?style=flat&logo=github)](https://gvcoder09.github.io/nodpi_site/)
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=GVCoder09.NoDPI)](https://github.com/GVCoder09/NoDPI)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL3.0-yellow.svg)](https://www.gnu.org/licenses/gpl-3.0.txt)
 [![GitHub Release](https://img.shields.io/github/v/release/GVCoder09/nodpi)](https://github.com/GVCoder09/NoDPI)
@@ -16,6 +15,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
 [![GitHub Forks](https://img.shields.io/github/forks/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
 [![GitHub Last commit](https://img.shields.io/github/last-commit/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Pages](https://img.shields.io/badge/Website-Live-green?style=flat&logo=github)](https://gvcoder09.github.io/nodpi_site/)
 
 > [!IMPORTANT]
 > This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
