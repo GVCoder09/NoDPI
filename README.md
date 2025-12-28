@@ -7,20 +7,23 @@
 # NoDPI
 <b><i>Say NO to blocking!</b></i>
 
-[![Visitors](https://visitor-badge.laobi.icu/badge?page_id=GVCoder09.NoDPI)]()
+[![GitHub Pages](https://img.shields.io/badge/Website-Live-green?style=flat&logo=github)](https://gvcoder09.github.io/nodpi_site/)
+[![Visitors](https://visitor-badge.laobi.icu/badge?page_id=GVCoder09.NoDPI)](https://github.com/GVCoder09/NoDPI)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL3.0-yellow.svg)](https://www.gnu.org/licenses/gpl-3.0.txt)
 [![GitHub Release](https://img.shields.io/github/v/release/GVCoder09/nodpi)](https://github.com/GVCoder09/NoDPI)
-[![Github All Releases](https://img.shields.io/github/downloads/GVCoder09/nodpi/total.svg)](https://github.com/remittor/zapret-openwrt/releases)
-[![Github Latest Release](https://img.shields.io/github/downloads/GVCoder09/nodpi/latest/total.svg)](https://github.com/remittor/zapret-openwrt/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
-[![GitHub Forks](https://img.shields.io/github/forks/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
-[![GitHub Last commit](https://img.shields.io/github/last-commit/GVCoder09/nodpi.svg?style=social)](https://github.com/GVCoder09/NoDPI)
+[![Github All Releases](https://img.shields.io/github/downloads/GVCoder09/nodpi/total.svg)](https://github.com/GVCoder09/NoDPI)
+[![Github Latest Release](https://img.shields.io/github/downloads/GVCoder09/nodpi/latest/total.svg)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Stars](https://img.shields.io/github/stars/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Forks](https://img.shields.io/github/forks/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
+[![GitHub Last commit](https://img.shields.io/github/last-commit/GVCoder09/nodpi.svg?style=dark)](https://github.com/GVCoder09/NoDPI)
 
 > [!IMPORTANT]
 > This project is a fork of the repository https://github.com/theo0x0/nodpi and is developed independently. Do not confuse with https://github.com/raspabamos/nodpi !
 
 > [!NOTE]
 > This version is for desktop systems. **The Android version is available here:** https://github.com/GVCoder09/NoDPI4Android
+
+🌐 **[Website & Documentation](https://gvcoder09.github.io/nodpi_site/)** - user-friendly guide and overview
 
 **Read this in other languages / Читайте на других языках**
 - **[English](README.md)**
