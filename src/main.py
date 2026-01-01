@@ -62,7 +62,8 @@ class ProxyConfig:
         self.no_blacklist = False
         self.auto_blacklist = False
         self.quiet = False
-        self.not_check_update = True
+        self.not_check_update = False
+        self.hide_banner = False
 
 
 class IBlacklistManager(ABC):
@@ -421,30 +422,9 @@ class Statistics(IStatistics):
 
         col_width = 30
 
-        conns_stat = f"\033[97mTotal: \033[93m{self.total_connections}\033[0m".ljust(
-            col_width
-        ) + "\033[97m| " + f"\033[97mMiss: \033[96m{self.allowed_connections}\033[0m".ljust(
-            col_width
-        ) + "\033[97m| " + f"\033[97mUnblock: \033[92m{self.blocked_connections}\033[0m".ljust(
-            col_width
-        ) + "\033[97m| " f"\033[97mErrors: \033[91m{self.errors_connections}\033[0m".ljust(
-            col_width
-        )
+        conns_stat = f"\033[97mUnblock: \033[92m{self.blocked_connections}\033[0m".ljust(col_width) + "\033[97m| " + f"\033[97mMiss: \033[96m{self.allowed_connections}\033[0m".ljust(col_width) + "\033[97m| " + f"\033[97mTotal: \033[93m{self.total_connections}\033[0m".ljust(col_width) + "\033[97m| " + f"\033[97mErrors: \033[91m{self.errors_connections}\033[0m".ljust(col_width)
 
-        traffic_stat = (
-            f"\033[97mTotal: \033[96m{self.format_size(self.traffic_out + self.traffic_in)}\033[0m".ljust(
-                col_width
-            )
-            + "\033[97m| "
-            + f"\033[97mDL: \033[96m{self.format_size(self.traffic_in)}\033[0m".ljust(
-                col_width
-            )
-            + "\033[97m| "
-            + f"\033[97mUL: \033[96m{self.format_size(self.traffic_out)}\033[0m".ljust(
-                col_width
-            )
-            + "\033[97m| "
-        )
+        traffic_stat = f"\033[97mDL: \033[96m{self.format_size(self.traffic_in)}\033[0m".ljust(col_width) + "\033[97m| " + f"\033[97mUL: \033[96m{self.format_size(self.traffic_out)}\033[0m".ljust(col_width) + "\033[97m| " + f"\033[97mTotal: \033[96m{self.format_size(self.traffic_out + self.traffic_in)}\033[0m".ljust(col_width) + "\033[97m| "
 
         avg_speed_in = (
             self.average_speed_in[0] / self.average_speed_in[1]
@@ -477,7 +457,7 @@ class Statistics(IStatistics):
 
         title = " STATISTICS "
 
-        top_border = f"\033[92m{title.center(console_width, '=')}\033[0m"
+        top_border = f"\033[92m{title.center(console_width, '═')}\033[0m"
         line_conns = f"\033[92m{'Conns'.ljust(8)}:\033[0m {conns_stat}\033[0m"
         line_traffic = f"\033[92m{'Traffic'.ljust(8)}:\033[0m {traffic_stat}\033[0m"
         line_speed = f"\033[92m{'Speed'.ljust(8)}:\033[0m {speed_stat}\033[0m"
@@ -943,7 +923,7 @@ class ProxyServer:
     async def print_banner(self) -> None:
         """Print startup banner"""
 
-        if not self.config.not_check_update:
+        if not (self.config.not_check_update or self.config.quiet):
             self.update_check_task = asyncio.create_task(self.check_for_updates())
 
             try:
@@ -961,52 +941,53 @@ class ProxyServer:
         if sys.platform == "win32":
             os.system("mode con: lines=33")
 
-        if sys.stdout.isatty():
-            console_width = os.get_terminal_size().columns
-        else:
-            console_width = 80
-        # self.logger.debug("console_width=", console_width)
+        if not self.config.hide_banner:
+            if sys.stdout.isatty():
+                console_width = os.get_terminal_size().columns
+            else:
+                console_width = 80
+            # self.logger.debug("console_width=", console_width)
 
-        disclaimer = (
-            "DISCLAIMER. The developer and/or supplier of this software "
-            "shall not be liable for any loss or damage, including but "
-            "not limited to direct, indirect, incidental, punitive or "
-            "consequential damages arising out of the use of or inability "
-            "to use this software, even if the developer or supplier has been "
-            "advised of the possibility of such damages. The developer and/or "
-            "supplier of this software shall not be liable for any legal "
-            "consequences arising out of the use of this software. This includes, "
-            "but is not limited to, violation of laws, rules or regulations, "
-            "as well as any claims or suits arising out of the use of this software. "
-            "The user is solely responsible for compliance with all applicable laws "
-            "and regulations when using this software."
-        )
-        wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
+            disclaimer = (
+                "DISCLAIMER. The developer and/or supplier of this software "
+                "shall not be liable for any loss or damage, including but "
+                "not limited to direct, indirect, incidental, punitive or "
+                "consequential damages arising out of the use of or inability "
+                "to use this software, even if the developer or supplier has been "
+                "advised of the possibility of such damages. The developer and/or "
+                "supplier of this software shall not be liable for any legal "
+                "consequences arising out of the use of this software. This includes, "
+                "but is not limited to, violation of laws, rules or regulations, "
+                "as well as any claims or suits arising out of the use of this software. "
+                "The user is solely responsible for compliance with all applicable laws "
+                "and regulations when using this software."
+            )
+            wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
 
-        left_padding = (console_width - 76) // 2
+            left_padding = (console_width - 76) // 2
 
-        # self.logger.info("\n\n\n")
-        self.logger.info(
-            "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
-        )
-
-        for line in wrapped_text:
-            padded_line = line.ljust(70)
+            # self.logger.info("\n\n\n")
             self.logger.info(
-                "\033[91m" + " " * left_padding +
-                "║ " + padded_line + " ║" + "\033[0m"
+                "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
             )
 
-        self.logger.info(
-            "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
-        )
+            for line in wrapped_text:
+                padded_line = line.ljust(70)
+                self.logger.info(
+                    "\033[91m" + " " * left_padding +
+                    "║ " + padded_line + " ║" + "\033[0m"
+                )
 
-        time.sleep(1)
+            self.logger.info(
+                "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
+            )
 
-        # self.logger.info("\033[2J\033[H")
+            time.sleep(1)
 
-        self.logger.info(
-            """\033[92m
+            # self.logger.info("\033[2J\033[H")
+
+            self.logger.info(
+                """\033[92m
   ██████   █████          ██████████   ███████████  █████
  ░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███
   ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███
@@ -1016,14 +997,14 @@ class ProxyServer:
   █████  ░░█████░░██████  ██████████   █████        █████
  ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░
 \033[0m"""
-        )
-        self.logger.info(f"\033[92mVersion: {__version__}".center(console_width))
-        self.logger.info(
-            "\033[97m" +
-            "Enjoy watching! / Наслаждайтесь просмотром!".center(console_width)
-        )
+            )
+            self.logger.info(f"\033[92mVersion: {__version__}".center(console_width))
+            self.logger.info(
+                "\033[97m" +
+                "Enjoy watching! / Наслаждайтесь просмотром!".center(console_width)
+            )
 
-        # self.logger.info("\n")
+            # self.logger.info("\n")
 
         if not self.config.not_check_update:
             update_message = None
@@ -1162,6 +1143,7 @@ class ConfigLoader:
         config.auto_blacklist = args.autoblacklist
         config.quiet = args.quiet
         config.not_check_update = args.not_check_update
+        config.hide_banner = args.hide_banner
         return config
 
 
@@ -1344,6 +1326,9 @@ class ProxyApplication:
         )
         parser.add_argument(
             "--not-check-update", action="store_true", help="Do not check for updates"
+        )
+        parser.add_argument(
+            "--hide-banner", action="store_true", help="Suppress printing banner"
         )
 
         autostart_group = parser.add_mutually_exclusive_group()
