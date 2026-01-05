@@ -32,8 +32,6 @@ if sys.platform == "win32":
 
 __version__ = "2.1"
 
-os.system("")
-
 
 class ConnectionInfo:
     """Class to store connection information"""
@@ -64,6 +62,8 @@ class ProxyConfig:
         self.no_blacklist = False
         self.auto_blacklist = False
         self.quiet = False
+        self.not_check_update = False
+        self.hide_banner = False
 
 
 class IBlacklistManager(ABC):
@@ -902,14 +902,12 @@ class ProxyServer:
     async def check_for_updates(self):
         """Check for updates"""
 
-        if self.config.quiet:
-            return None
-
         try:
             loop = asyncio.get_event_loop()
 
             def sync_check():
                 try:
+                    # self.logger.debug("Check for updates")
                     req = Request(
                         "https://gvcoder09.github.io/nodpi_site/api/v1/update_info.json",
                     )
@@ -939,95 +937,101 @@ class ProxyServer:
     async def print_banner(self) -> None:
         """Print startup banner"""
 
-        self.update_check_task = asyncio.create_task(self.check_for_updates())
+        if self.config.quiet:
+            return
 
-        try:
-            await asyncio.wait_for(self.update_event.wait(), timeout=2.0)
-        except asyncio.TimeoutError:
-            if self.update_check_task and not self.update_check_task.done():
-                self.update_check_task.cancel()
-                try:
-                    await self.update_check_task
-                except asyncio.CancelledError:
-                    pass
+        if not self.config.not_check_update:
+            self.update_check_task = asyncio.create_task(self.check_for_updates())
+
+            try:
+                await asyncio.wait_for(self.update_event.wait(), timeout=2.0)
+            except asyncio.TimeoutError:
+                if self.update_check_task and not self.update_check_task.done():
+                    self.update_check_task.cancel()
+                    try:
+                        await self.update_check_task
+                    except asyncio.CancelledError:
+                        pass
 
         self.logger.info("\033]0;NoDPI\007")
 
         if sys.platform == "win32":
             os.system("mode con: lines=33")
 
-        if sys.stdout.isatty():
-            console_width = os.get_terminal_size().columns
-        else:
-            console_width = 80
+        if not self.config.hide_banner:
+            if sys.stdout.isatty():
+                console_width = os.get_terminal_size().columns
+            else:
+                console_width = 80
+            # self.logger.debug("console_width=", console_width)
 
-        disclaimer = (
-            "DISCLAIMER. The developer and/or supplier of this software "
-            "shall not be liable for any loss or damage, including but "
-            "not limited to direct, indirect, incidental, punitive or "
-            "consequential damages arising out of the use of or inability "
-            "to use this software, even if the developer or supplier has been "
-            "advised of the possibility of such damages. The developer and/or "
-            "supplier of this software shall not be liable for any legal "
-            "consequences arising out of the use of this software. This includes, "
-            "but is not limited to, violation of laws, rules or regulations, "
-            "as well as any claims or suits arising out of the use of this software. "
-            "The user is solely responsible for compliance with all applicable laws "
-            "and regulations when using this software."
-        )
-        wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
+            disclaimer = (
+                "DISCLAIMER. The developer and/or supplier of this software "
+                "shall not be liable for any loss or damage, including but "
+                "not limited to direct, indirect, incidental, punitive or "
+                "consequential damages arising out of the use of or inability "
+                "to use this software, even if the developer or supplier has been "
+                "advised of the possibility of such damages. The developer and/or "
+                "supplier of this software shall not be liable for any legal "
+                "consequences arising out of the use of this software. This includes, "
+                "but is not limited to, violation of laws, rules or regulations, "
+                "as well as any claims or suits arising out of the use of this software. "
+                "The user is solely responsible for compliance with all applicable laws "
+                "and regulations when using this software."
+            )
+            wrapped_text = textwrap.TextWrapper(width=70).wrap(disclaimer)
 
-        left_padding = (console_width - 76) // 2
+            left_padding = (console_width - 76) // 2
 
-        self.logger.info("\n\n\n")
-        self.logger.info(
-            "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
-        )
-
-        for line in wrapped_text:
-            padded_line = line.ljust(70)
+            self.logger.info("\n\n\n")
             self.logger.info(
-                "\033[91m" + " " * left_padding +
-                "║ " + padded_line + " ║" + "\033[0m"
+                "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
             )
 
-        self.logger.info(
-            "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
-        )
+            for line in wrapped_text:
+                padded_line = line.ljust(70)
+                self.logger.info(
+                    "\033[91m" + " " * left_padding +
+                    "║ " + padded_line + " ║" + "\033[0m"
+                )
 
-        time.sleep(1)
+            self.logger.info(
+                "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
+            )
 
-        update_message = None
-        if self.update_check_task and self.update_check_task.done():
-            try:
-                update_message = self.update_check_task.result()
-            except (asyncio.CancelledError, Exception):
-                pass
+            time.sleep(1)
 
-        self.logger.info("\033[2J\033[H")
+            self.logger.info("\033[2J\033[H")
 
-        self.logger.info(
-            """
-\033[92m  ██████   █████          ██████████   ███████████  █████
+            self.logger.info(
+                """\033[92m
+  ██████   █████          ██████████   ███████████  █████
  ░░██████ ░░███          ░░███░░░░███ ░░███░░░░░███░░███
   ░███░███ ░███   ██████  ░███   ░░███ ░███    ░███ ░███
   ░███░░███░███  ███░░███ ░███    ░███ ░██████████  ░███
   ░███ ░░██████ ░███ ░███ ░███    ░███ ░███░░░░░░   ░███
   ░███  ░░█████ ░███ ░███ ░███    ███  ░███         ░███
   █████  ░░█████░░██████  ██████████   █████        █████
- ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░\033[0m
-        """
-        )
-        self.logger.info(f"\033[92mVersion: {__version__}".center(50))
-        self.logger.info(
-            "\033[97m" +
-            "Enjoy watching! / Наслаждайтесь просмотром!".center(50)
-        )
+ ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░
+\033[0m"""
+            )
+            self.logger.info(f"\033[92mVersion: {__version__}".center(console_width))
+            self.logger.info(
+                "\033[97m" +
+                "Enjoy watching! / Наслаждайтесь просмотром!".center(console_width)
+            )
 
-        self.logger.info("\n")
+            self.logger.info("\n")
 
-        if update_message:
-            self.logger.info(update_message)
+        if not self.config.not_check_update:
+            update_message = None
+            if self.update_check_task and self.update_check_task.done():
+                try:
+                    update_message = self.update_check_task.result()
+                except (asyncio.CancelledError, Exception):
+                    pass
+            if update_message:
+                self.logger.info(update_message)
 
         self.logger.info(
             f"\033[92m[INFO]:\033[97m Proxy is running on {self.config.host}:{self.config.port} at {datetime.now().strftime('%H:%M on %Y-%m-%d')}"
@@ -1155,6 +1159,8 @@ class ConfigLoader:
         config.no_blacklist = args.no_blacklist
         config.auto_blacklist = args.autoblacklist
         config.quiet = args.quiet
+        config.not_check_update = args.not_check_update
+        config.hide_banner = args.hide_banner
         return config
 
 
@@ -1294,6 +1300,9 @@ class ProxyApplication:
         """Parse command line arguments"""
 
         parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-q", "--quiet", action="store_true", help="Remove UI output"
+        )
         parser.add_argument("--host", default="127.0.0.1", help="Proxy host")
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
@@ -1333,7 +1342,10 @@ class ProxyApplication:
             "--log-error", required=False, help="Path to log file for errors"
         )
         parser.add_argument(
-            "-q", "--quiet", action="store_true", help="Remove UI output"
+            "--not-check-update", action="store_true", help="Do not check for updates"
+        )
+        parser.add_argument(
+            "--hide-banner", action="store_true", help="Suppress printing banner"
         )
 
         autostart_group = parser.add_mutually_exclusive_group()
