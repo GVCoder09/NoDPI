@@ -32,7 +32,8 @@ if sys.platform == "win32":
 
 __version__ = "2.1"
 
-os.system("")
+if sys.platform == "win32":
+    os.system("")
 
 
 class ConnectionInfo:
@@ -414,6 +415,12 @@ class Statistics(IStatistics):
     def get_stats_display(self) -> str:
         """Get formatted statistics display"""
 
+        if sys.stdout.isatty():
+            console_width = os.get_terminal_size().columns
+        else:
+            console_width = 80
+        # self.logger.debug("console_width=", console_width)
+
         col_width = 30
 
         conns_stat = f"\033[97mTotal: \033[93m{self.total_connections}\033[0m".ljust(
@@ -470,13 +477,13 @@ class Statistics(IStatistics):
             )
         )
 
-        title = "STATISTICS"
+        title = " STATISTICS "
 
-        top_border = f"\033[92m{'═' * 36} {title} {'═' * 36}\033[0m"
-        line_conns = f"\033[92m   {'Conns'.ljust(8)}:\033[0m {conns_stat}\033[0m"
-        line_traffic = f"\033[92m   {'Traffic'.ljust(8)}:\033[0m {traffic_stat}\033[0m"
-        line_speed = f"\033[92m   {'Speed'.ljust(8)}:\033[0m {speed_stat}\033[0m"
-        bottom_border = f"\033[92m{'═' * (36*2+len(title)+2)}\033[0m"
+        top_border = f"\033[92m{title:═^{console_width}}\033[0m"
+        line_conns = f"\033[92m{'Conns'.ljust(8)}:\033[0m {conns_stat}\033[0m"
+        line_traffic = f"\033[92m{'Traffic'.ljust(8)}:\033[0m {traffic_stat}\033[0m"
+        line_speed = f"\033[92m{'Speed'.ljust(8)}:\033[0m {speed_stat}\033[0m"
+        bottom_border = f"\033[92m{'═' * console_width}\033[0m"
 
         return (
             f"{top_border}\n{line_conns}\n{line_traffic}\n{line_speed}\n{bottom_border}"
@@ -1018,10 +1025,10 @@ class ProxyServer:
  ░░░░░    ░░░░░  ░░░░░░  ░░░░░░░░░░   ░░░░░        ░░░░░\033[0m
         """
         )
-        self.logger.info(f"\033[92mVersion: {__version__}".center(50))
+        self.logger.info(f"\033[92mVersion: {__version__}".center(console_width))
         self.logger.info(
             "\033[97m" +
-            "Enjoy watching! / Наслаждайтесь просмотром!".center(50)
+            "Enjoy watching! / Наслаждайтесь просмотром!".center(console_width)
         )
 
         self.logger.info("\n")
@@ -1294,6 +1301,9 @@ class ProxyApplication:
         """Parse command line arguments"""
 
         parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-q", "--quiet", action="store_true", help="Remove UI output"
+        )
         parser.add_argument("--host", default="127.0.0.1", help="Proxy host")
         parser.add_argument("--port", type=int,
                             default=8881, help="Proxy port")
@@ -1331,9 +1341,6 @@ class ProxyApplication:
         )
         parser.add_argument(
             "--log-error", required=False, help="Path to log file for errors"
-        )
-        parser.add_argument(
-            "-q", "--quiet", action="store_true", help="Remove UI output"
         )
 
         autostart_group = parser.add_mutually_exclusive_group()
