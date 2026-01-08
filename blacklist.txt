@@ -1,3 +1,6 @@
+# Short blacklist
+# Only for YouTube
+
 youtube.com
 youtu.be
 yt.be
