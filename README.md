@@ -40,8 +40,10 @@
     - [Alternatives](#alternatives)
   - [Terms of Use and Disclaimer](#terms-of-use-and-disclaimer)
   - [Quick start](#quick-start)
+    - [Additional Blacklists](#additional-blacklists)
     - [Add to startup in Windows and Linux](#add-to-startup-in-windows-and-linux)
     - [Supported arguments](#supported-arguments)
+    - [Running on Windows 7](#running-on-windows-7)
   - [Run from source code](#run-from-source-code)
   - [Building the executable](#building-the-executable)
   - [Run in Docker](#run-in-docker)
@@ -91,7 +93,15 @@ The entire NoDPI code is written exclusively on the Python and uses only its sta
 
 ### Sites currently unavailable via NoDPI
 
-As of October 2025, Instagram and Facebook were not unlockable with NoDPI. Please use [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI) by @ValdikSS. All sites blocked by IP address are also unavailable.
+As of February 2026, the following services and websites cannot be unblocked using NoDPI:
+- Instagram
+- Facebook
+- X (Twitter)
+- Telegram
+- WhatsApp 
+- Voice and video in Discord
+
+Please use [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI) by @ValdikSS or another tools. All sites blocked by IP address are also unavailable.
 
 ### Alternatives
 
@@ -135,6 +145,10 @@ Your use of this software constitutes your agreement to the terms of this discla
 
 Please report any problems and malfunctions to us on [the Issues page](https://github.com/GVCoder09/NoDPI/issues)
 
+### Additional Blacklists
+
+By default, a blacklist containing YouTube-only domains is used. Additional lists can be found [here](https://github.com/GVCoder09/NoDPI/tree/main/blacklists).
+
 ### Add to startup in Windows and Linux
 
 > [!NOTE]
@@ -175,6 +189,10 @@ options:
   --install             Add proxy to Windows/Linux autostart (only for executable version)
   --uninstall           Remove proxy from Windows/Linux autostart (only for executable version)
 ```
+
+### Running on Windows 7
+
+There is no ready-to-use build for Windows 7 yet. To run NoDPI on this OS, you will need Python 3.7-3.8. You can also use the [Python embeddable package](https://www.python.org/ftp/python/3.8.8/python-3.8.8-embed-win32.zip), which does not require installation.
 
 ## Run from source code
 
