@@ -1,0 +1,7 @@
+# Blacklist for Roblox
+# Taken from https://github.com/itdoginfo/allow-domains/
+
+roblox.com
+rbxcdn.com
+robloxdev.com
+rbxinfra.net

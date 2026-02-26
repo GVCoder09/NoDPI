@@ -1,0 +1,20 @@
+# Blacklist for facebook & WhatsApp
+# Taken from https://github.com/itdoginfo/allow-domains/
+
+instagram.com
+ig.me
+facebook.com
+facebook.net
+cdninstagram.com
+fbcdn.net
+fbsbx.com
+internalfb.com
+oculus.com
+meta.com
+threads.net
+fb.com
+whatsapp.com
+whatsapp.net
+whatsapp.biz
+wa.me
+circlecrewpinkcrowd.com

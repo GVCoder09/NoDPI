@@ -1,5 +1,5 @@
-# Short blacklist
-# Only for YouTube
+# Blacklist for YouTube
+# Taken from https://github.com/itdoginfo/allow-domains/
 
 youtube.com
 youtu.be
