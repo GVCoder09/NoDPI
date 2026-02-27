@@ -9,6 +9,7 @@ NoDPI is a utility for bypassing the DPI (Deep Packet Inspection) system
 
 import argparse
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -56,6 +57,8 @@ class ProxyConfig:
         self.host = "127.0.0.1"
         self.port = 8881
         self.out_host = None
+        self.username = None
+        self.password = None
         self.blacklist_file = "blacklist.txt"
         self.fragment_method = "random"
         self.domain_matching = "strict"
@@ -526,6 +529,7 @@ class ConnectionHandler(IConnectionHandler):
         self.statistics = statistics
         self.logger = logger
         self.out_host = self.config.out_host
+        self.auth_enabled = config.username is not None and config.password is not None
         self.active_connections: Dict[Tuple, ConnectionInfo] = {}
         self.connections_lock = asyncio.Lock()
         self.tasks: List[asyncio.Task] = []
@@ -559,6 +563,9 @@ class ConnectionHandler(IConnectionHandler):
 
             self.statistics.update_traffic(0, len(http_data))
             conn_info.traffic_out += len(http_data)
+
+            if not await self._check_proxy_authorization(http_data, writer):
+                return
 
             if method == b"CONNECT":
                 await self._handle_https_connection(
@@ -595,6 +602,57 @@ class ConnectionHandler(IConnectionHandler):
             port = int(host_port[1]) if len(host_port) > 1 else 80
 
         return method, host, port
+
+    async def _check_proxy_authorization(
+        self, http_data: bytes, writer: asyncio.StreamWriter
+    ) -> bool:
+        """Check proxy authorization"""
+
+        if not self.auth_enabled:
+            return True
+
+        headers = http_data.split(b"\r\n")
+        auth_header = None
+        for line in headers:
+            if line.lower().startswith(b"proxy-authorization:"):
+                auth_header = line
+                break
+
+        if auth_header is None:
+            await self._send_407_response(writer)
+            return False
+
+        parts = auth_header.split(b" ", 2)
+        if len(parts) != 3 or parts[1].lower() != b"basic":
+            await self._send_407_response(writer)
+            return False
+
+        try:
+            decoded = base64.b64decode(parts[2].strip()).decode("utf-8")
+            username, password = decoded.split(":", 1)
+        except Exception:
+            await self._send_407_response(writer)
+            return False
+
+        if username != self.config.username or password != self.config.password:
+            await self._send_407_response(writer)
+            return False
+
+        return True
+
+    async def _send_407_response(self, writer: asyncio.StreamWriter):
+        """Send 407 Proxy Authentication Required response"""
+
+        response = (
+            "HTTP/1.1 407 Proxy Authentication Required\r\n"
+            'Proxy-Authenticate: Basic realm="NoDPI Proxy"\r\n'
+            "Content-Length: 0\r\n"
+            "Connection: close\r\n\r\n"
+        )
+        writer.write(response.encode())
+        await writer.drain()
+        writer.close()
+        await writer.wait_closed()
 
     async def _handle_https_connection(
         self,
@@ -1147,6 +1205,8 @@ class ConfigLoader:
         config.host = args.host
         config.port = args.port
         config.out_host = args.out_host
+        config.username = args.auth_username
+        config.password = args.auth_password
         config.blacklist_file = args.blacklist
         config.fragment_method = args.fragment_method
         config.domain_matching = args.domain_matching
@@ -1326,6 +1386,14 @@ class ProxyApplication:
             choices=["loose", "strict"],
             help="Domain matching mode (strict by default)",
         )
+
+        parser.add_argument(
+            "--auth-username", required=False, help="Username for proxy authentication"
+        )
+        parser.add_argument(
+            "--auth-password", required=False, help="Password for proxy authentication"
+        )
+
         parser.add_argument(
             "--log-access", required=False, help="Path to the access control log"
         )
