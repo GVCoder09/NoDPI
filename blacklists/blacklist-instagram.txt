@@ -1,6 +1,4 @@
 # Blacklist for Instagram
-# Taken from https://github.com/itdoginfo/allow-domains/
-
 
 achat-followers-instagram.com
 acheter-followers-instagram.com
