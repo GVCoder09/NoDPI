@@ -216,8 +216,37 @@ if sys.platform == "win32":
                 0, 0, hinstance, None,
             )
 
+        def _load_icon(self) -> int:
+
+            if getattr(sys, "frozen", False):
+                hinstance = ctypes.windll.kernel32.GetModuleHandleW(None)
+                hicon = ctypes.windll.user32.LoadIconW(
+                    hinstance,
+                    ctypes.cast(1, ctypes.wintypes.LPCWSTR),
+                )
+                if hicon:
+                    return hicon
+
+            exe_path = sys.executable
+            if exe_path and os.path.isfile(exe_path):
+                hicon_large = ctypes.wintypes.HICON(0)
+                hicon_small = ctypes.wintypes.HICON(0)
+                n = ctypes.windll.shell32.ExtractIconExW(
+                    ctypes.c_wchar_p(exe_path),
+                    0,
+                    ctypes.byref(hicon_large),
+                    ctypes.byref(hicon_small),
+                    1,
+                )
+                if n > 0:
+                    hicon = hicon_small.value or hicon_large.value
+                    if hicon:
+                        return hicon
+
+            return ctypes.windll.user32.LoadIconW(None, IDI_APPLICATION)
+
         def _add_tray_icon(self) -> None:
-            hicon = ctypes.windll.user32.LoadIconW(None, IDI_APPLICATION)
+            hicon = self._load_icon()
 
             nid = NOTIFYICONDATA()
             nid.cbSize = ctypes.sizeof(NOTIFYICONDATA)
@@ -352,6 +381,7 @@ class ProxyConfig:
         self.no_blacklist = False
         self.auto_blacklist = False
         self.quiet = False
+        self.start_in_tray = False
 
 
 class IBlacklistManager(ABC):
@@ -1500,6 +1530,7 @@ class ConfigLoader:
         config.no_blacklist = args.no_blacklist
         config.auto_blacklist = args.autoblacklist
         config.quiet = args.quiet
+        config.start_in_tray = args.start_in_tray
         return config
 
 
@@ -1688,6 +1719,11 @@ class ProxyApplication:
         parser.add_argument(
             "-q", "--quiet", action="store_true", help="Remove UI output"
         )
+        parser.add_argument(
+            "--start-in-tray",
+            action="store_true",
+            help="Start minimized to tray (Windows only)",
+        )
 
         autostart_group = parser.add_mutually_exclusive_group()
         autostart_group.add_argument(
@@ -1744,6 +1780,8 @@ class ProxyApplication:
         if sys.platform == "win32" and not config.quiet:
             tray = WindowsTrayIcon(tooltip=f"NoDPI v{__version__}")
             tray.start()
+            if config.start_in_tray:
+                tray.hide_to_tray()
 
         proxy = ProxyServer(config, blacklist_manager, statistics, logger)
 
