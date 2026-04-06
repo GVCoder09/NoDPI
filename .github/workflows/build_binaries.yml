@@ -1,0 +1,264 @@
+name: Build binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_to_release:
+        description: "Также загрузить в GitHub Release"
+        type: boolean
+        required: false
+        default: false
+      release_tag:
+        description: "Тег релиза (например v1.2.3) для ручного запуска"
+        type: string
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller ./nodpi.spec
+
+    - name: Prepare release artifacts
+      run: |
+        mkdir release
+        Copy-Item ./dist/nodpi.exe -Destination release/
+        Copy-Item ./blacklist.txt -Destination release/
+        Copy-Item ./big-blacklist.txt -Destination release/ -ErrorAction SilentlyContinue
+        Copy-Item ./README.md -Destination release/
+        Copy-Item ./LICENSE -Destination release/ -ErrorAction SilentlyContinue
+        
+        Compress-Archive -Path release/* -DestinationPath NoDPI-win-x64.zip
+
+    - name: Upload artifact (Windows)
+      uses: actions/upload-artifact@v6
+      with:
+        name: NoDPI-windows
+        path: NoDPI-win-x64.zip
+
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller ./nodpi.spec
+
+    - name: Prepare release artifacts
+      run: |
+        mkdir release
+        cp ./dist/nodpi release/
+        cp ./blacklist.txt release/
+        cp ./big-blacklist.txt release/ 2>/dev/null || true
+        cp ./README.md release/
+        cp ./LICENSE release/ 2>/dev/null || true
+        
+        zip -r NoDPI-linux-x64.zip release/
+    - name: Upload artifact (Linux)
+      uses: actions/upload-artifact@v6
+      with:
+        name: NoDPI-linux
+        path: NoDPI-linux-x64.zip
+
+
+  build-macos-intel:
+    name: Build for macOS (Intel)
+    runs-on: macos-15-intel  # Intel-based macOS runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ./nodpi.spec
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir release
+          cp ./dist/nodpi release/
+          cp ./blacklist.txt release/
+          cp ./big-blacklist.txt release/ 2>/dev/null || true
+          cp ./README.md release/
+          cp ./LICENSE release/ 2>/dev/null || true
+          
+          zip -r NoDPI-macos-intel-x64.zip release/
+
+      - name: Upload artifact (macOS Intel)
+        uses: actions/upload-artifact@v6
+        with:
+          name: NoDPI-macos-intel
+          path: NoDPI-macos-intel-x64.zip
+
+  build-macos-arm:
+    name: Build for macOS (ARM64 / Apple Silicon)
+    runs-on: macos-latest  # M* Apple Silicon runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller ./nodpi.spec
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir release
+          cp ./dist/nodpi release/
+          cp ./blacklist.txt release/
+          cp ./big-blacklist.txt release/ 2>/dev/null || true
+          cp ./README.md release/
+          cp ./LICENSE release/ 2>/dev/null || true
+          
+          zip -r NoDPI-macos-arm64.zip release/
+
+      - name: Upload artifact (macOS ARM64)
+        uses: actions/upload-artifact@v6
+        with:
+          name: NoDPI-macos-arm
+          path: NoDPI-macos-arm64.zip
+
+  publish-release:
+    name: Publish artifacts to GitHub Release
+    needs: [ build-windows, build-linux, build-macos-intel, build-macos-arm ]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_release == 'true' && github.event.inputs.release_tag != '')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: NoDPI-windows
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: NoDPI-linux
+
+      - name: Download macOS Intel artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: NoDPI-macos-intel
+
+      - name: Download macOS ARM artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: NoDPI-macos-arm
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.release_tag }}
+          files: |
+            NoDPI-win-x64.zip
+            NoDPI-linux-x64.zip
+            NoDPI-macos-intel-x64.zip
+            NoDPI-macos-arm64.zip
+          append_body: true
+          body: |
+            ### Сборки для разных платформ:
+            
+            **Windows (Experimental):**
+            - Архив: NoDPI-win-x64.zip
+            - Совместимость: Windows 7 и выше.
+            
+            **Linux:**
+            - Архив: NoDPI-linux-x64.zip
+            - Тестировалось на: Kali Linux.
+            
+            **macOS Intel:**
+            - Архив: NoDPI-macos-intel-x64.zip
+            - Совместимость: Mac с процессором Intel.
+            
+            **macOS Apple Silicon (M1/M2/M3):**
+            - Архив: NoDPI-macos-arm64.zip
+            - Совместимость: Mac с процессором M1, M2, M3 и новее.
+            
+            ### Установка Linux версии:
+            ```bash
+            # Распакуйте архив:
+            unzip NoDPI-linux-x64.zip
+            
+            # Перейдите в директорию:
+            cd release
+            
+            # Сделайте исполняемым:
+            chmod +x nodpi
+            
+            # Запустите:
+            ./nodpi
+            ```
+            
+            ### Установка Mac версии:
+            ```bash
+            # Распакуйте архив:
+            unzip NoDPI-macos-intel-x64.zip
+            
+            # Перейдите в директорию:
+            cd release
+
+            # Снимите аттрибут карантина:
+            xattr -cr nodpi
+
+            # Запустите:
+            ./nodpi
+            ```
