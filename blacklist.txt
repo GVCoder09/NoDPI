@@ -19,4 +19,3 @@ yt-video-upload.l.google.com
 wide-youtube.l.google.com
 yt3.googleusercontent.com
 youtubekids.com
-returnyoutubedislikeapi.com
