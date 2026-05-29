@@ -1,3 +1,6 @@
+"""
+Implementation the Windows tray minimization control
+"""
 
 import os
 import sys
@@ -138,13 +141,16 @@ class WindowsTrayIcon:
         self._install_minimize_hook()
 
     def hide_to_tray(self) -> None:
+
         ctypes.windll.user32.ShowWindow(self._console_hwnd, SW_HIDE)
 
     def show_from_tray(self) -> None:
+
         ctypes.windll.user32.ShowWindow(self._console_hwnd, SW_RESTORE)
         ctypes.windll.user32.SetForegroundWindow(self._console_hwnd)
 
     def _message_loop(self) -> None:
+
         self._create_tray_window()
         self._add_tray_icon()
 
@@ -156,6 +162,7 @@ class WindowsTrayIcon:
         self._remove_tray_icon()
 
     def _create_tray_window(self) -> None:
+
         hinstance = ctypes.windll.kernel32.GetModuleHandleW(None)
 
         def _wnd_proc(hwnd, msg, wparam, lparam):
@@ -231,6 +238,7 @@ class WindowsTrayIcon:
         return ctypes.windll.user32.LoadIconW(None, IDI_APPLICATION)
 
     def _add_tray_icon(self) -> None:
+
         hicon = self._load_icon()
 
         nid = NOTIFYICONDATA()
@@ -246,12 +254,14 @@ class WindowsTrayIcon:
         ctypes.windll.shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(nid))
 
     def _remove_tray_icon(self) -> None:
+
         if self.nid:
             ctypes.windll.shell32.Shell_NotifyIconW(
                 NIM_DELETE, ctypes.byref(self.nid))
             self.nid = None
 
     def _show_context_menu(self, hwnd: int) -> None:
+
         hmenu = ctypes.windll.user32.CreatePopupMenu()
 
         ctypes.windll.user32.AppendMenuW(
