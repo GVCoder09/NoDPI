@@ -1240,7 +1240,7 @@ class WindowsAutostartManager(IAutostartManager):
                         app_name,
                         0,
                         winreg.REG_SZ,
-                        f'"{exe_path}" --blacklist "{os.path.dirname(exe_path)}/blacklist.txt"',
+                        f'"{exe_path}" --blacklist "{os.path.dirname(exe_path)}/blacklist.txt" --start-in-tray',
                     )
                 print(
                     f"\033[92m[INFO]:\033[97m Added to autostart: {exe_path}")
