@@ -770,6 +770,7 @@ class ConnectionHandler(IConnectionHandler):
         except Exception:
             self.logger.log_error(
                 f"{host.decode()} : {traceback.format_exc()}")
+            self.statistics.increment_error_connections()
             return
 
         should_fragment = True
@@ -906,6 +907,7 @@ class ConnectionHandler(IConnectionHandler):
         except Exception:
             self.logger.log_error(
                 f"{conn_info.dst_domain} : {traceback.format_exc()}")
+            self.statistics.increment_error_connections()
         finally:
             try:
                 writer.close()
