@@ -1377,8 +1377,8 @@ class ProxyApplication:
 
         parser.add_argument(
             "--fragment-method",
-            default="random",
-            choices=["random", "sni"],
+            default="sni",
+            choices=["sni", "random"],
             help="Fragmentation method (random by default)",
         )
         parser.add_argument(
