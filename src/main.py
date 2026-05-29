@@ -479,15 +479,42 @@ class Statistics(IStatistics):
 
         title = "STATISTICS"
 
-        top_border = f"\033[92m{'═' * 36} {title} {'═' * 36}\033[0m"
-        line_conns = f"\033[92m   {'Conns'.ljust(8)}:\033[0m {conns_stat}\033[0m"
-        line_traffic = f"\033[92m   {'Traffic'.ljust(8)}:\033[0m {traffic_stat}\033[0m"
-        line_speed = f"\033[92m   {'Speed'.ljust(8)}:\033[0m {speed_stat}\033[0m"
-        bottom_border = f"\033[92m{'═' * (36*2+len(title)+2)}\033[0m"
+        def visible_length(s: str) -> int:
 
-        return (
-            f"{top_border}\n{line_conns}\n{line_traffic}\n{line_speed}\n{bottom_border}"
-        )
+            length = 0
+            i = 0
+            while i < len(s):
+                if s[i] == '\x1b':
+                    i += 1
+                    while i < len(s) and s[i] != 'm':
+                        i += 1
+                    i += 1
+                else:
+                    length += 1
+                    i += 1
+            return length
+
+        inner_width = 35 + 1 + len(title) + 1 + 35
+        total_width = inner_width + 2
+
+        top_border = f"\033[92m╭{'─' * 35} {title} {'─' * 35}╮\033[0m"
+        bottom_border = f"\033[92m╰{'─' * (inner_width)}╯\033[0m"
+
+        base_conns = f"\033[92m│  {'Conns'.ljust(8)}:\033[0m {conns_stat}"
+        base_traffic = f"\033[92m│  {'Traffic'.ljust(8)}:\033[0m {traffic_stat}"
+        base_speed = f"\033[92m│  {'Speed'.ljust(8)}:\033[0m {speed_stat}"
+
+        lines = [base_conns, base_traffic, base_speed]
+
+        formatted_lines = []
+
+        for line in lines:
+            vis_len = visible_length(line)
+            padding = total_width - vis_len - 1
+            formatted_line = line + " " * padding + "\033[92m│\033[0m"
+            formatted_lines.append(formatted_line)
+
+        return (f"{top_border}\n" + "\n".join(formatted_lines) + f"\n{bottom_border}")
 
     @staticmethod
     def format_size(size: int) -> str:
@@ -1039,18 +1066,18 @@ class ProxyServer:
 
         self.logger.info("\n\n\n")
         self.logger.info(
-            "\033[91m" + " " * left_padding + "╔" + "═" * 72 + "╗" + "\033[0m"
+            "\033[91m" + " " * left_padding + "╭" + "─" * 72 + "╮" + "\033[0m"
         )
 
         for line in wrapped_text:
             padded_line = line.ljust(70)
             self.logger.info(
                 "\033[91m" + " " * left_padding +
-                "║ " + padded_line + " ║" + "\033[0m"
+                "│ " + padded_line + " │" + "\033[0m"
             )
 
         self.logger.info(
-            "\033[91m" + " " * left_padding + "╚" + "═" * 72 + "╝" + "\033[0m"
+            "\033[91m" + " " * left_padding + "╰" + "─" * 72 + "╯" + "\033[0m"
         )
 
         time.sleep(1)
@@ -1161,7 +1188,7 @@ class ProxyServer:
                 f"\033[91m[ERROR]: Failed to start proxy on this address ({self.config.host}:{self.config.port}). It looks like the port is already in use\033[0m"
             )
             input("\nPress Enter to exit...")
-            
+
             sys.exit(1)
 
         if not self.config.quiet:
