@@ -1160,6 +1160,8 @@ class ProxyServer:
             self.logger.error(
                 f"\033[91m[ERROR]: Failed to start proxy on this address ({self.config.host}:{self.config.port}). It looks like the port is already in use\033[0m"
             )
+            input("\nPress Enter to exit...")
+            
             sys.exit(1)
 
         if not self.config.quiet:
