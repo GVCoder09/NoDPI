@@ -31,7 +31,7 @@ from urllib.request import urlopen, Request
 if sys.platform == "win32":
     import winreg
 
-    from platform_utils.tray import WindowsTrayIcon
+    from utils.tray import WindowsTrayIcon
 
 __version__ = "2.1"
 
