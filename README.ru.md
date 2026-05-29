@@ -66,7 +66,7 @@ ClientHello разбивается на несколько частей случ
 
 *Фрагментация по SNI*
 
-В пакете есть поле, содержащее запись SNI. ClientHello разбивается на 4 части: сам SNI, первая и вторая половина SNI, и всё, что после него. К каждой части прикрепляется заголовок, указывающий на тип ClientHello, и всё это отправляется одним пакетом.
+В пакете есть поле, содержащее запись SNI. ClientHello разбивается на несколько TLS-записей: часть до SNI, SNI посимвольно, и часть после SNI. К каждой части прикрепляется заголовок, указывающий на тип Clienthello, и затем все это отправляется в одном пакете.
 
 Также, независимо от способа, версия TLS заменяется на версию 1.3, которая является самой современной на данный момент (хотя это не означает, что ваши данные начинают передаваться в соответствии со спецификациями этой версии). Всё это в совокупности позволяет обойти блокировку. По всей видимости, DPI пока не обладает необходимыми мощностями, чтобы распутать этот «клубок», и просто игнорирует такой трафик, экономя время и силы. Но, возможно, скоро эти методы перестанут работать.
 
@@ -160,9 +160,14 @@ NoDPI не собирает и не отправляет никаких данн
 ### Поддерживаемые аргументы командной строки
 
 ```
-usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
-               [--fragment-method {random,sni}] [--domain-matching {loose,strict}] [--log-access LOG_ACCESS] [--log-error LOG_ERROR]
-               [-q] [--install | --uninstall]
+usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
+[--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
+               [--fragment-method {sni,random}] 
+               [--domain-matching {loose,strict}] 
+               [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] 
+               [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
+               [-q] [--start-in-tray]
+               [--install | --uninstall]
 
 options:
   -h, --help            show this help message and exit
@@ -173,15 +178,20 @@ options:
                         Path to blacklist file
   --no-blacklist        Use fragmentation for all domains
   --autoblacklist       Automatic detection of blocked domains
-  --fragment-method {random,sni}
+  --fragment-method {sni,random}
                         Fragmentation method (random by default)
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
+  --auth-username AUTH_USERNAME
+                        Username for proxy authentication
+  --auth-password AUTH_PASSWORD
+                        Password for proxy authentication
   --log-access LOG_ACCESS
                         Path to the access control log
   --log-error LOG_ERROR
                         Path to log file for errors
   -q, --quiet           Remove UI output
+  --start-in-tray       Start minimized to tray (Windows only)
   --install             Add proxy to Windows/Linux autostart (only for executable version)
   --uninstall           Remove proxy from Windows/Linux autostart (only for executable version)
 ```

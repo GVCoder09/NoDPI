@@ -70,7 +70,7 @@ Clienthello is divided into several parts of random length. Each part is glued w
 
 *Fragmentation by SNI*
 
-In the package there is a field containing SNI record. ClientHello is divided into 4 parts: to SNI, the first and second half of SNI, and all that is after it. The title indicating the type Clienthello is attached to each part and then all this is sent in one bag.
+The packet contains a field containing the SNI record. The ClientHello is split into several TLS records: the pre-SNI portion, the SNI character-by-character, and the post-SNI portion. Each portion is appended with a header indicating the ClientHello type, and then the entire packet is sent in a single packet.
 
 Also regardless of the method, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock. Apparently DPI does not yet have the necessary capacities to unravel this "ball" and simply ignore such traffic, saving time and effort. But it is possible that soon these methods will not be workers.
 
@@ -164,9 +164,13 @@ By default, a blacklist containing YouTube-only domains is used. Additional list
 ### Supported arguments
 
 ```
-usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
-               [--fragment-method {random,sni}] [--domain-matching {loose,strict}] [--log-access LOG_ACCESS] [--log-error LOG_ERROR]
-               [-q] [--install | --uninstall]
+usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
+[--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
+               [--fragment-method {sni,random}] 
+               [--domain-matching {loose,strict}] 
+               [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
+               [-q] [--start-in-tray]
+               [--install | --uninstall]
 
 options:
   -h, --help            show this help message and exit
@@ -177,15 +181,20 @@ options:
                         Path to blacklist file
   --no-blacklist        Use fragmentation for all domains
   --autoblacklist       Automatic detection of blocked domains
-  --fragment-method {random,sni}
+  --fragment-method {sni,random}
                         Fragmentation method (random by default)
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
+  --auth-username AUTH_USERNAME
+                        Username for proxy authentication
+  --auth-password AUTH_PASSWORD
+                        Password for proxy authentication
   --log-access LOG_ACCESS
                         Path to the access control log
   --log-error LOG_ERROR
                         Path to log file for errors
   -q, --quiet           Remove UI output
+  --start-in-tray       Start minimized to tray (Windows only)
   --install             Add proxy to Windows/Linux autostart (only for executable version)
   --uninstall           Remove proxy from Windows/Linux autostart (only for executable version)
 ```
