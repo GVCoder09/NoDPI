@@ -15,7 +15,6 @@ if sys.platform != "win32":
 import ctypes
 import ctypes.wintypes
 
-# WinAPI constants
 WM_USER = 0x0400
 WM_TRAYICON = WM_USER + 1
 WM_LBUTTONDBLCLK = 0x0203
