@@ -773,23 +773,19 @@ class ConnectionHandler(IConnectionHandler):
                 part_start = data[: sni_pos[0]]
                 sni_data = data[sni_pos[0]: sni_pos[1]]
                 part_end = data[sni_pos[1]:]
-                middle = (len(sni_data) + 1) // 2
 
                 parts.append(
                     bytes.fromhex("160304")
                     + len(part_start).to_bytes(2, "big")
                     + part_start
                 )
-                parts.append(
-                    bytes.fromhex("160304")
-                    + len(sni_data[:middle]).to_bytes(2, "big")
-                    + sni_data[:middle]
-                )
-                parts.append(
-                    bytes.fromhex("160304")
-                    + len(sni_data[middle:]).to_bytes(2, "big")
-                    + sni_data[middle:]
-                )
+                for i in range(0, len(sni_data), 2):
+                    chunk = sni_data[i: i + 2]
+                    parts.append(
+                        bytes.fromhex("160304")
+                        + len(chunk).to_bytes(2, "big")
+                        + chunk
+                    )
                 parts.append(
                     bytes.fromhex("160304")
                     + len(part_end).to_bytes(2, "big")
