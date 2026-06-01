@@ -64,13 +64,13 @@
 
 NoDPI launches a proxy server on your computer through which you direct http(s) traffic. The program intercepts ClientHello of outing connections and fragments them according to one of the following methods:
 
-*Random fragmentation (by default)*
-
-Clienthello is divided into several parts of random length. Each part is glued with the prefixes of the type of Clienthello and then all this is sent in one package.
-
-*Fragmentation by SNI*
+*Fragmentation by SNI (by default)*
 
 The packet contains a field containing the SNI record. The ClientHello is split into several TLS records: the pre-SNI portion, the SNI character-by-character, and the post-SNI portion. Each portion is appended with a header indicating the ClientHello type, and then the entire packet is sent in a single packet.
+
+*Random fragmentation*
+
+Clienthello is divided into several parts of random length. Each part is glued with the prefixes of the type of Clienthello and then all this is sent in one package.
 
 Also regardless of the method, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock. Apparently DPI does not yet have the necessary capacities to unravel this "ball" and simply ignore such traffic, saving time and effort. But it is possible that soon these methods will not be workers.
 
@@ -182,7 +182,7 @@ options:
   --no-blacklist        Use fragmentation for all domains
   --autoblacklist       Automatic detection of blocked domains
   --fragment-method {sni,random}
-                        Fragmentation method (random by default)
+                        Fragmentation method (sni by default)
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
   --auth-username AUTH_USERNAME

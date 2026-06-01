@@ -1410,7 +1410,7 @@ class ProxyApplication:
             "--fragment-method",
             default="sni",
             choices=["sni", "random"],
-            help="Fragmentation method (random by default)",
+            help="Fragmentation method (sni by default)",
         )
         parser.add_argument(
             "--domain-matching",
