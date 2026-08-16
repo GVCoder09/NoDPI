@@ -257,4 +257,4 @@ options:
 
 ## История звезд проекта
 
-[![Star History Chart](https://api.star-history.com/svg?repos=GVCoder09/NoDPI&type=Date)](https://www.star-history.com/#GVCoder09/NoDPI&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=GVCoder09/NoDPI&type=Date)](https://star-history.dera.page/#GVCoder09/NoDPI&Date)
