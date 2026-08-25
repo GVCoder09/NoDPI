@@ -13,9 +13,6 @@ on:
         type: string
         required: false
         default: ""
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: write
@@ -37,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
+        pip install pyinstaller pillow
 
     - name: Build with PyInstaller
       run: |
@@ -180,7 +177,7 @@ jobs:
   publish-release:
     name: Publish artifacts to GitHub Release
     needs: [ build-windows, build-linux, build-macos-intel, build-macos-arm ]
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_release == 'true' && github.event.inputs.release_tag != '')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_release == 'true' && github.event.inputs.release_tag != ''
     runs-on: ubuntu-latest
 
     steps:
@@ -207,7 +204,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.event.inputs.release_tag }}
+          tag_name: ${{ github.event.inputs.release_tag }}
           files: |
             NoDPI-win-x64.zip
             NoDPI-linux-x64.zip
