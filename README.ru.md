@@ -22,6 +22,10 @@
 > [!NOTE]
 > Эта версия предназначена для настольных систем. **Версия для Android доступна здесь:** https://github.com/GVCoder09/NoDPI4Android
 
+🌐 **[Веб-сайт и документация](https://gvcoder09.github.io/nodpi_site/)** - удобное руководство и обзор
+
+💬 **[NoDPI Lab](https://nodpi.forumotion.com/)** — форум сообщества по вопросам NoDPI, DPI, сетевой фильтрации и обхода ограничений.
+
 **Read this in other languages / Читайте на других языках**
 - [English](README.md)
 - **[Русский](README.ru.md)**
