@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import random
+import socket
 import ssl
 import subprocess
 import sys
@@ -63,7 +64,7 @@ class ProxyConfig:
         self.username = None
         self.password = None
         self.blacklist_file = "blacklist.txt"
-        self.fragment_method = "random"
+        self.fragment_method = "disorder"
         self.domain_matching = "strict"
         self.log_access_file = None
         self.log_error_file = None
@@ -765,8 +766,15 @@ class ConnectionHandler(IConnectionHandler):
         """Handle initial TLS data and fragmentation"""
 
         try:
-            head = await reader.read(5)
-            data = await reader.read(2048)
+            head = await reader.readexactly(5)
+            if head[0] != 0x16:
+                writer.write(head)
+                await writer.drain()
+                self.statistics.update_traffic(0, len(head))
+                conn_info.traffic_out += len(head)
+                return
+            record_len = int.from_bytes(head[3:5], "big")
+            data = await reader.readexactly(record_len)
         except Exception:
             self.logger.log_error(
                 f"{host.decode()} : {traceback.format_exc()}")
@@ -794,7 +802,7 @@ class ConnectionHandler(IConnectionHandler):
 
         parts = []
 
-        if self.config.fragment_method == "sni":
+        if self.config.fragment_method in ("sni", "disorder"):
             sni_pos = self._extract_sni_position(data)
 
             if sni_pos:
@@ -841,12 +849,50 @@ class ConnectionHandler(IConnectionHandler):
                 parts.append(part_data)
                 data = data[chunk_len:]
 
+        if not parts:
+            parts.append(head + data)
+
         combined_parts = b"".join(parts)
-        writer.write(combined_parts)
-        await writer.drain()
+
+        if self.config.fragment_method == "disorder" and len(parts) > 2:
+            await self._send_disorder(
+                writer, parts[0] + parts[1], b"".join(parts[2:])
+            )
+        else:
+            writer.write(combined_parts)
+            await writer.drain()
 
         self.statistics.update_traffic(0, len(combined_parts))
         conn_info.traffic_out += len(combined_parts)
+
+    async def _send_disorder(
+        self, writer: asyncio.StreamWriter, first: bytes, rest: bytes
+    ) -> None:
+        """
+        Send the first segment with a low TTL so it is dropped before DPI,
+        then the rest normally. The kernel retransmits the first segment
+        later with the restored TTL, so DPI sees the stream out of order.
+        """
+
+        sock = writer.get_extra_info("socket")
+        if sock.family == socket.AF_INET6:
+            level = socket.IPPROTO_IPV6
+            option = getattr(socket, "IPV6_UNICAST_HOPS", 16)
+        else:
+            level, option = socket.IPPROTO_IP, socket.IP_TTL
+
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        default_ttl = sock.getsockopt(level, option)
+        sock.setsockopt(level, option, 1)
+        try:
+            writer.write(first)
+            await writer.drain()
+            await asyncio.sleep(0.01)
+        finally:
+            sock.setsockopt(level, option, default_ttl)
+
+        writer.write(rest)
+        await writer.drain()
 
     async def _setup_piping(
         self,
@@ -1408,9 +1454,9 @@ class ProxyApplication:
 
         parser.add_argument(
             "--fragment-method",
-            default="sni",
-            choices=["sni", "random"],
-            help="Fragmentation method (sni by default)",
+            default="disorder",
+            choices=["disorder", "sni", "random"],
+            help="Fragmentation method (disorder by default)",
         )
         parser.add_argument(
             "--domain-matching",
