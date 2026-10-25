@@ -33,7 +33,7 @@ if sys.platform == "win32":
 
     from utils.tray import WindowsTrayIcon
 
-__version__ = "2.2"
+__version__ = "2.3"
 
 if sys.platform == "win32":
     os.system("")
