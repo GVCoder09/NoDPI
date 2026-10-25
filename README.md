@@ -25,8 +25,6 @@
 
 🌐 **[Website & Documentation](https://gvcoder09.github.io/nodpi_site/)** - user-friendly guide and overview
 
-💬 **[NoDPI Lab](https://nodpi.forumotion.com/)** — community forum for NoDPI, DPI, network filtering and circumvention
-
 **Read this in other languages / Читайте на других языках**
 - **[English](README.md)**
 - [Русский](README.ru.md)
@@ -64,17 +62,11 @@
 
 ### How does this work
 
-NoDPI launches a proxy server on your computer through which you direct http(s) traffic. The program intercepts ClientHello of outing connections and fragments them according to one of the following methods:
+NoDPI launches a proxy server on your computer through which you direct http(s) traffic. The program intercepts ClientHello of outing connections and fragments them according to the following method:
 
-*Fragmentation by SNI (by default)*
+The packet contains a field that holds the SNI record. The ClientHello message is split into several TLS records: the portion preceding the SNI, the portion containing the SNI (character by character), and the portion following the SNI. A header indicating the ClientHello type is added to each of these parts. Unless out-of-order packet handling (disordering) is disabled, the first of these parts is sent with a TTL=1, causing it to be dropped by the nearest network device. As a result, the DPI (Deep Packet Inspection) system fails to identify the domain for which the connection is being established and allows the connection to proceed. The operating system subsequently retransmits the first part with a standard TTL.
 
-The packet contains a field containing the SNI record. The ClientHello is split into several TLS records: the pre-SNI portion, the SNI character-by-character, and the post-SNI portion. Each portion is appended with a header indicating the ClientHello type, and then the entire packet is sent in a single packet.
-
-*Random fragmentation*
-
-Clienthello is divided into several parts of random length. Each part is glued with the prefixes of the type of Clienthello and then all this is sent in one package.
-
-Also regardless of the method, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock. Apparently DPI does not yet have the necessary capacities to unravel this "ball" and simply ignore such traffic, saving time and effort. But it is possible that soon these methods will not be workers.
+Also, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock.
 
 > [!IMPORTANT]
 > NoDPI only works with HTTPS traffic. He can also take HTTP traffic, but purely for compatibility - sites working through this outdated protocol are practically not subject to unlock and the program simply sends traffic to the addressee.
@@ -95,10 +87,7 @@ The entire NoDPI code is written exclusively on the Python and uses only its sta
 
 ### Sites currently unavailable via NoDPI
 
-As of February 2026, the following services and websites cannot be unblocked using NoDPI:
-- Instagram
-- Facebook
-- X (Twitter)
+As of October 2026, the following services and websites cannot be unblocked using NoDPI:
 - Telegram
 - WhatsApp 
 - Voice and video in Discord
@@ -168,7 +157,7 @@ By default, a blacklist containing YouTube-only domains is used. Additional list
 ```
 usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
 [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
-               [--fragment-method {sni,random}] 
+               [--no-disorder]
                [--domain-matching {loose,strict}] 
                [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
                [-q] [--start-in-tray]
@@ -183,8 +172,7 @@ options:
                         Path to blacklist file
   --no-blacklist        Use fragmentation for all domains
   --autoblacklist       Automatic detection of blocked domains
-  --fragment-method {sni,random}
-                        Fragmentation method (sni by default)
+  --no-disorder         Disable disordering
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
   --auth-username AUTH_USERNAME
