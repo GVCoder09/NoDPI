@@ -828,27 +828,6 @@ class ConnectionHandler(IConnectionHandler):
                     + part_end
                 )
 
-        elif self.config.fragment_method == "random":
-            host_end = data.find(b"\x00")
-            if host_end != -1:
-                part_data = (
-                    bytes.fromhex("160304")
-                    + (host_end + 1).to_bytes(2, "big")
-                    + data[: host_end + 1]
-                )
-                parts.append(part_data)
-                data = data[host_end + 1:]
-
-            while data:
-                chunk_len = random.randint(1, len(data))
-                part_data = (
-                    bytes.fromhex("160304")
-                    + chunk_len.to_bytes(2, "big")
-                    + data[:chunk_len]
-                )
-                parts.append(part_data)
-                data = data[chunk_len:]
-
         if not parts:
             parts.append(head + data)
 
