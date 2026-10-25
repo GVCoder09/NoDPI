@@ -64,7 +64,7 @@ class ProxyConfig:
         self.username = None
         self.password = None
         self.blacklist_file = "blacklist.txt"
-        self.fragment_method = "disorder"
+        self.disordering = True
         self.domain_matching = "strict"
         self.log_access_file = None
         self.log_error_file = None
@@ -802,38 +802,37 @@ class ConnectionHandler(IConnectionHandler):
 
         parts = []
 
-        if self.config.fragment_method in ("sni", "disorder"):
-            sni_pos = self._extract_sni_position(data)
+        sni_pos = self._extract_sni_position(data)
 
-            if sni_pos:
-                part_start = data[: sni_pos[0]]
-                sni_data = data[sni_pos[0]: sni_pos[1]]
-                part_end = data[sni_pos[1]:]
+        if sni_pos:
+            part_start = data[: sni_pos[0]]
+            sni_data = data[sni_pos[0]: sni_pos[1]]
+            part_end = data[sni_pos[1]:]
 
+            parts.append(
+                bytes.fromhex("160304")
+                + len(part_start).to_bytes(2, "big")
+                + part_start
+            )
+            for i in range(0, len(sni_data), 2):
+                chunk = sni_data[i: i + 2]
                 parts.append(
                     bytes.fromhex("160304")
-                    + len(part_start).to_bytes(2, "big")
-                    + part_start
+                    + len(chunk).to_bytes(2, "big")
+                    + chunk
                 )
-                for i in range(0, len(sni_data), 2):
-                    chunk = sni_data[i: i + 2]
-                    parts.append(
-                        bytes.fromhex("160304")
-                        + len(chunk).to_bytes(2, "big")
-                        + chunk
-                    )
-                parts.append(
-                    bytes.fromhex("160304")
-                    + len(part_end).to_bytes(2, "big")
-                    + part_end
-                )
+            parts.append(
+                bytes.fromhex("160304")
+                + len(part_end).to_bytes(2, "big")
+                + part_end
+            )
 
         if not parts:
             parts.append(head + data)
 
         combined_parts = b"".join(parts)
 
-        if self.config.fragment_method == "disorder" and len(parts) > 2:
+        if self.config.disordering and len(parts) > 2:
             await self._send_disorder(
                 writer, parts[0] + parts[1], b"".join(parts[2:])
             )
@@ -1144,9 +1143,6 @@ class ProxyServer:
         self.logger.info(
             f"\033[92m[INFO]:\033[97m Proxy is running on {self.config.host}:{self.config.port} at {datetime.now().strftime('%H:%M on %Y-%m-%d')}"
         )
-        self.logger.info(
-            f"\033[92m[INFO]:\033[97m The selected fragmentation method: {self.config.fragment_method}"
-        )
 
         self.logger.info("")
         if isinstance(self.blacklist_manager, NoBlacklistManager):
@@ -1264,7 +1260,7 @@ class ConfigLoader:
         config.username = args.auth_username
         config.password = args.auth_password
         config.blacklist_file = args.blacklist
-        config.fragment_method = args.fragment_method
+        config.disordering = args.disordering
         config.domain_matching = args.domain_matching
         config.log_access_file = args.log_access
         config.log_error_file = args.log_error
@@ -1432,10 +1428,10 @@ class ProxyApplication:
         )
 
         parser.add_argument(
-            "--fragment-method",
-            default="disorder",
-            choices=["disorder", "sni", "random"],
-            help="Fragmentation method (disorder by default)",
+            "--no-disorder",
+            dest="disordering",
+            action="store_false",
+            help="Disable disordering",
         )
         parser.add_argument(
             "--domain-matching",
