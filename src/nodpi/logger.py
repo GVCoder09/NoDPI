@@ -1,6 +1,7 @@
 """Access/error file logging and console output"""
 
 import logging
+import sys
 from typing import Callable, Optional
 
 from nodpi.interfaces import ILogger
@@ -92,3 +93,12 @@ class ProxyLogger(ILogger):
 
         if not self.quiet:
             print(*args, **kwargs)
+
+    def fatal(self, message: str) -> None:
+        """Print an error to stderr even in quiet mode and write it to the error log"""
+
+        if sys.stderr.isatty():
+            print(f"\033[91m[ERROR]: {message}\033[0m", file=sys.stderr)
+        else:
+            print(f"[ERROR]: {message}", file=sys.stderr)
+        self.log_error(message)

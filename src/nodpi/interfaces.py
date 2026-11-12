@@ -40,6 +40,10 @@ class ILogger(ABC):
     def error(self, *args, **kwargs) -> None:
         """Print error message if not quiet"""
 
+    @abstractmethod
+    def fatal(self, message: str) -> None:
+        """Report an error the program cannot continue after, even in quiet mode"""
+
 
 class IStatistics(ABC):
     """Interface for statistics tracking"""

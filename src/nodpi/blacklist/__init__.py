@@ -27,5 +27,5 @@ def create_blacklist_manager(config: ProxyConfig, logger: ILogger) -> IBlacklist
     try:
         return FileBlacklistManager(config)
     except FileNotFoundError as e:
-        logger.error(f"\033[91m[ERROR]: {e}\033[0m")
+        logger.fatal(str(e))
         sys.exit(1)

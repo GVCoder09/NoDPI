@@ -61,12 +61,13 @@ class ProxyServer:
                 self.config.port,
             )
         except OSError:
-            self.logger.error(
-                f"\033[91m[ERROR]: Failed to start proxy on this address "
+            self.logger.fatal(
+                f"Failed to start proxy on this address "
                 f"({self.config.host}:{self.config.port}). "
-                f"It looks like the port is already in use\033[0m"
+                f"It looks like the port is already in use"
             )
-            input("\nPress Enter to exit...")
+            if not self.config.quiet and sys.stdin is not None and sys.stdin.isatty():
+                input("\nPress Enter to exit...")
 
             sys.exit(1)
 
