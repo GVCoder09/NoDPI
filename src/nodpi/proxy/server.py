@@ -11,7 +11,11 @@ from nodpi.proxy.handler import ConnectionHandler
 from nodpi.statistics import Statistics
 from nodpi.ui.banner import print_disclaimer, print_main_screen
 from nodpi.ui.stats_view import render_stats
-from nodpi.updates import get_update_message
+
+try:
+    from nodpi.updates import get_update_message
+except ImportError:
+    get_update_message = None
 
 
 class ProxyServer:
@@ -39,7 +43,7 @@ class ProxyServer:
     async def print_banner(self) -> None:
         """Print startup banner"""
 
-        update_message = await get_update_message()
+        update_message = await get_update_message() if get_update_message else None
         print_disclaimer(self.logger)
         print_main_screen(
             self.logger, self.config, self.blacklist_manager, self.resolver, update_message

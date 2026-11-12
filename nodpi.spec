@@ -1,5 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+excludes = []
+if os.environ.get("NODPI_NO_UPDATE_CHECK") == "1":
+    excludes.append("nodpi.updates")
 
 a = Analysis(
     ['src/main.py'],
@@ -10,7 +15,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=excludes,
     noarchive=False,
     optimize=0,
 )
