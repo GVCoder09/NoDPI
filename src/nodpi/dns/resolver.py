@@ -134,16 +134,16 @@ class Resolver:
             return parse_response(raw, qtype)
 
         results = await asyncio.gather(one(TYPE_A), one(TYPE_AAAA), return_exceptions=True)
-        answers = [r for r in results if not isinstance(r, BaseException)]
-        if not answers:
-            raise results[0]
-        if all(r[0] not in (RCODE_NOERROR, RCODE_NXDOMAIN) for r in answers):
-            raise OSError(f"DNS error code {answers[0][0]}")
+        for result in results:
+            if isinstance(result, BaseException):
+                raise result
+            if result[0] not in (RCODE_NOERROR, RCODE_NXDOMAIN):
+                raise OSError(f"DNS error code {result[0]}")
 
         addresses: List[Address] = []
         ttls: List[int] = []
         for qtype, result in zip((TYPE_A, TYPE_AAAA), results):
-            if isinstance(result, BaseException) or result[0] != RCODE_NOERROR:
+            if result[0] != RCODE_NOERROR:
                 continue
             family = socket.AF_INET if qtype == TYPE_A else socket.AF_INET6
             addresses.extend((family, ip) for ip in result[1])
