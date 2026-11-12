@@ -177,6 +177,8 @@ class ConnectionHandler(IConnectionHandler):
                 return
             record_len = int.from_bytes(head[3:5], "big")
             data = await reader.readexactly(record_len)
+        except asyncio.IncompleteReadError:
+            return
         except Exception:
             self.logger.log_error(f"{host.decode()} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
