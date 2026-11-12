@@ -3,3 +3,5 @@ __pycache__
 /dist
 /build
 /setup.iss
+/.venv-build/
+/build.ps1
