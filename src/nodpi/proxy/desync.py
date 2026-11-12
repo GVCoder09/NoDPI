@@ -76,12 +76,20 @@ async def send_oob(writer: asyncio.StreamWriter, parts: List[bytes]) -> None:
     await writer.drain()
 
 
+async def send_with(writer: asyncio.StreamWriter, parts: List[bytes], method: str) -> None:
+    """Send fragmented ClientHello with the given method: plain, disorder or oob"""
+
+    if method == "disorder" and len(parts) > 2:
+        await send_disorder(writer, parts[0] + parts[1], b"".join(parts[2:]))
+    elif method == "oob" and len(parts) > 2:
+        await send_oob(writer, parts)
+    else:
+        await send_plain(writer, parts)
+
+
 async def send_fragments(
     writer: asyncio.StreamWriter, parts: List[bytes], disordering: bool
 ) -> None:
     """Send fragmented ClientHello using the configured method"""
 
-    if disordering and len(parts) > 2:
-        await send_disorder(writer, parts[0] + parts[1], b"".join(parts[2:]))
-    else:
-        await send_plain(writer, parts)
+    await send_with(writer, parts, "disorder" if disordering else "plain")

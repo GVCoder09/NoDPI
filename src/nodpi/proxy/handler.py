@@ -2,7 +2,7 @@
 
 import asyncio
 import traceback
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from nodpi.config import ProxyConfig
 from nodpi.interfaces import (
@@ -14,6 +14,7 @@ from nodpi.interfaces import (
 from nodpi.proxy import http
 from nodpi.proxy.connection import ConnectionInfo
 from nodpi.proxy.desync import send_fragments
+from nodpi.proxy.race import race_client_hello
 from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_client_hello
 
 READ_CHUNK = 1500
@@ -21,6 +22,8 @@ HAPPY_EYEBALLS_DELAY = 0.25
 CONNECT_TIMEOUT = 10
 CLIENT_HELLO_TIMEOUT = 30
 FIRST_RESPONSE_TIMEOUT = 8
+RACE_METHODS = ("primary", "oob", "primary")
+RACE_SCHEDULE = (0, 0.1, 0.2, 1.5, 1.6, 1.7)
 
 ConnKey = Tuple[str, int]
 
@@ -144,6 +147,18 @@ class ConnectionHandler(IConnectionHandler):
         if sent_hello is None:
             await self._close_unpiped(writer, remote_writer, conn_key)
             return
+        if isinstance(sent_hello, list):
+            await self._race_and_pipe(
+                reader,
+                writer,
+                host,
+                port,
+                conn_key,
+                conn_info,
+                (remote_reader, remote_writer),
+                sent_hello,
+            )
+            return
 
         await self._setup_piping(
             reader,
@@ -153,6 +168,53 @@ class ConnectionHandler(IConnectionHandler):
             conn_key,
             first_response_timeout=FIRST_RESPONSE_TIMEOUT if sent_hello else None,
         )
+
+    async def _race_and_pipe(
+        self,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+        host: bytes,
+        port: int,
+        conn_key: ConnKey,
+        conn_info: ConnectionInfo,
+        first_connection: Tuple[asyncio.StreamReader, asyncio.StreamWriter],
+        parts: List[bytes],
+    ) -> None:
+        """Race ClientHello attempts and pipe the client to the first one that replies"""
+
+        primary = "disorder" if self.config.disordering else "plain"
+        methods = [primary if m == "primary" else m for m in RACE_METHODS]
+
+        def on_sent(n: int) -> None:
+            self.statistics.update_traffic(0, n)
+            conn_info.traffic_out += n
+
+        winner, attempts = await race_client_hello(
+            first_connection,
+            lambda: self._open_upstream(host, port),
+            parts,
+            methods,
+            RACE_SCHEDULE,
+            FIRST_RESPONSE_TIMEOUT,
+            on_sent,
+        )
+
+        if winner is None:
+            self.logger.log_error(
+                f"{conn_info.dst_domain} : no response from server after ClientHello, "
+                f"{attempts} attempts in {FIRST_RESPONSE_TIMEOUT} s"
+            )
+            self.statistics.increment_error_connections()
+            await self._close_unpiped(writer, first_connection[1], conn_key)
+            return
+
+        remote_reader, remote_writer, first, _ = winner
+        writer.write(first)
+        await writer.drain()
+        self.statistics.update_traffic(len(first), 0)
+        conn_info.traffic_in += len(first)
+
+        await self._setup_piping(reader, writer, remote_reader, remote_writer, conn_key)
 
     async def _close_unpiped(
         self,
@@ -203,8 +265,8 @@ class ConnectionHandler(IConnectionHandler):
         writer: asyncio.StreamWriter,
         host: bytes,
         conn_info: ConnectionInfo,
-    ) -> Optional[bool]:
-        """Forward the ClientHello; True if TLS sent, False if not TLS, None on timeout"""
+    ) -> Union[None, bool, List[bytes]]:
+        """Forward the ClientHello; True/False if sent, parts to race, None on timeout"""
 
         try:
             head = await asyncio.wait_for(
@@ -242,6 +304,9 @@ class ConnectionHandler(IConnectionHandler):
         self.statistics.increment_blocked_connections()
 
         parts = fragment_client_hello(head, data)
+        if self.config.retries:
+            return parts
+
         await send_fragments(writer, parts, self.config.disordering)
 
         sent = sum(len(p) for p in parts)
