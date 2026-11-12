@@ -17,6 +17,7 @@ from nodpi.proxy.desync import send_fragments
 from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_client_hello
 
 READ_CHUNK = 1500
+HAPPY_EYEBALLS_DELAY = 0.25
 
 ConnKey = Tuple[str, int]
 
@@ -109,6 +110,8 @@ class ConnectionHandler(IConnectionHandler):
             host.decode(),
             port,
             local_addr=(self.out_host, 0) if self.out_host else None,
+            happy_eyeballs_delay=HAPPY_EYEBALLS_DELAY,
+            interleave=1,
         )
 
     async def _handle_https_connection(
