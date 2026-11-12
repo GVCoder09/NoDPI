@@ -18,6 +18,9 @@ from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_clien
 
 READ_CHUNK = 1500
 HAPPY_EYEBALLS_DELAY = 0.25
+CONNECT_TIMEOUT = 10
+CLIENT_HELLO_TIMEOUT = 30
+FIRST_RESPONSE_TIMEOUT = 8
 
 ConnKey = Tuple[str, int]
 
@@ -106,12 +109,15 @@ class ConnectionHandler(IConnectionHandler):
     async def _open_upstream(
         self, host: bytes, port: int
     ) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-        return await asyncio.open_connection(
-            host.decode(),
-            port,
-            local_addr=(self.out_host, 0) if self.out_host else None,
-            happy_eyeballs_delay=HAPPY_EYEBALLS_DELAY,
-            interleave=1,
+        return await asyncio.wait_for(
+            asyncio.open_connection(
+                host.decode(),
+                port,
+                local_addr=(self.out_host, 0) if self.out_host else None,
+                happy_eyeballs_delay=HAPPY_EYEBALLS_DELAY,
+                interleave=1,
+            ),
+            CONNECT_TIMEOUT,
         )
 
     async def _handle_https_connection(
@@ -134,9 +140,39 @@ class ConnectionHandler(IConnectionHandler):
         writer.write(http.CONNECTION_ESTABLISHED)
         await writer.drain()
 
-        await self._handle_initial_tls_data(reader, remote_writer, host, conn_info)
+        sent_hello = await self._handle_initial_tls_data(reader, remote_writer, host, conn_info)
+        if sent_hello is None:
+            await self._close_unpiped(writer, remote_writer, conn_key)
+            return
 
-        await self._setup_piping(reader, writer, remote_reader, remote_writer, conn_key)
+        await self._setup_piping(
+            reader,
+            writer,
+            remote_reader,
+            remote_writer,
+            conn_key,
+            first_response_timeout=FIRST_RESPONSE_TIMEOUT if sent_hello else None,
+        )
+
+    async def _close_unpiped(
+        self,
+        client_writer: asyncio.StreamWriter,
+        remote_writer: asyncio.StreamWriter,
+        conn_key: ConnKey,
+    ) -> None:
+        """Close both sides of a connection that never reached piping"""
+
+        for w in (remote_writer, client_writer):
+            try:
+                w.close()
+                await w.wait_closed()
+            except BaseException:
+                pass
+
+        async with self.connections_lock:
+            conn_info = self.active_connections.pop(conn_key, None)
+            if conn_info:
+                self.logger.log_access(conn_info.access_log_line())
 
     async def _handle_http_connection(
         self,
@@ -167,25 +203,29 @@ class ConnectionHandler(IConnectionHandler):
         writer: asyncio.StreamWriter,
         host: bytes,
         conn_info: ConnectionInfo,
-    ) -> None:
-        """Read the ClientHello from the client and forward it, fragmented if needed"""
+    ) -> Optional[bool]:
+        """Forward the ClientHello; True if TLS sent, False if not TLS, None on timeout"""
 
         try:
-            head = await reader.readexactly(TLS_RECORD_HEADER_LEN)
+            head = await asyncio.wait_for(
+                reader.readexactly(TLS_RECORD_HEADER_LEN), CLIENT_HELLO_TIMEOUT
+            )
             if head[0] != TLS_HANDSHAKE:
                 writer.write(head)
                 await writer.drain()
                 self.statistics.update_traffic(0, len(head))
                 conn_info.traffic_out += len(head)
-                return
+                return False
             record_len = int.from_bytes(head[3:5], "big")
-            data = await reader.readexactly(record_len)
+            data = await asyncio.wait_for(reader.readexactly(record_len), CLIENT_HELLO_TIMEOUT)
+        except asyncio.TimeoutError:
+            return None
         except asyncio.IncompleteReadError:
-            return
+            return False
         except Exception:
             self.logger.log_error(f"{host.decode()} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
-            return
+            return False
 
         self.statistics.increment_total_connections()
 
@@ -197,7 +237,7 @@ class ConnectionHandler(IConnectionHandler):
 
             self.statistics.update_traffic(0, len(combined_data))
             conn_info.traffic_out += len(combined_data)
-            return
+            return True
 
         self.statistics.increment_blocked_connections()
 
@@ -207,6 +247,7 @@ class ConnectionHandler(IConnectionHandler):
         sent = sum(len(p) for p in parts)
         self.statistics.update_traffic(0, sent)
         conn_info.traffic_out += sent
+        return True
 
     # --------------------------------------------------------------- piping
 
@@ -217,6 +258,7 @@ class ConnectionHandler(IConnectionHandler):
         remote_reader: asyncio.StreamReader,
         remote_writer: asyncio.StreamWriter,
         conn_key: ConnKey,
+        first_response_timeout: Optional[float] = None,
     ) -> None:
         """Setup bidirectional piping between client and remote"""
 
@@ -227,7 +269,13 @@ class ConnectionHandler(IConnectionHandler):
                         self._pipe_data(client_reader, remote_writer, "out", conn_key)
                     ),
                     asyncio.create_task(
-                        self._pipe_data(remote_reader, client_writer, "in", conn_key)
+                        self._pipe_data(
+                            remote_reader,
+                            client_writer,
+                            "in",
+                            conn_key,
+                            first_read_timeout=first_response_timeout,
+                        )
                     ),
                 ]
             )
@@ -238,12 +286,25 @@ class ConnectionHandler(IConnectionHandler):
         writer: asyncio.StreamWriter,
         direction: str,
         conn_key: ConnKey,
+        first_read_timeout: Optional[float] = None,
     ) -> None:
-        """Pipe data between reader and writer"""
+        """Pipe data between reader and writer, optionally limiting the first read"""
 
         try:
             while not reader.at_eof() and not writer.is_closing():
-                data = await reader.read(READ_CHUNK)
+                if first_read_timeout is not None:
+                    try:
+                        data = await asyncio.wait_for(reader.read(READ_CHUNK), first_read_timeout)
+                    except asyncio.TimeoutError:
+                        self.logger.log_error(
+                            f"{self._conn_label(conn_key)} : no response from server "
+                            f"after ClientHello in {first_read_timeout} s"
+                        )
+                        self.statistics.increment_error_connections()
+                        break
+                    first_read_timeout = None
+                else:
+                    data = await reader.read(READ_CHUNK)
                 if not data:
                     break
 
