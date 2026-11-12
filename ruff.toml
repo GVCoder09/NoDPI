@@ -1,0 +1,22 @@
+# Ruff configuration for NoDPI
+# Releases are built with Python 3.8 (Windows 7 support), so keep the target at 3.8:
+# ruff must not suggest syntax that 3.8 does not understand.
+
+target-version = "py38"
+line-length = 100
+src = ["src"]
+extend-exclude = ["build", "dist"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear: likely bugs
+    "UP",  # pyupgrade (limited to what 3.8 supports)
+    "SIM", # simplifications
+]
+
+[lint.isort]
+known-first-party = ["nodpi"]
