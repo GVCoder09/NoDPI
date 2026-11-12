@@ -3,7 +3,6 @@
 import os
 import subprocess
 import sys
-
 from pathlib import Path
 
 from nodpi.interfaces import IAutostartManager
@@ -48,28 +47,21 @@ class LinuxAutostartManager(IAutostartManager):
                 user_service_dir.mkdir(parents=True, exist_ok=True)
 
                 with open(service_file, "w", encoding="utf-8") as f:
-                    f.write(SERVICE_TEMPLATE.format(
-                        exec_path=exec_path, blacklist_path=blacklist_path))
+                    f.write(
+                        SERVICE_TEMPLATE.format(exec_path=exec_path, blacklist_path=blacklist_path)
+                    )
 
-                subprocess.run(
-                    ["systemctl", "--user", "daemon-reload"], check=True)
-                subprocess.run(
-                    ["systemctl", "--user", "enable", service_name], check=True
-                )
-                subprocess.run(
-                    ["systemctl", "--user", "start", service_name], check=True
-                )
+                subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+                subprocess.run(["systemctl", "--user", "enable", service_name], check=True)
+                subprocess.run(["systemctl", "--user", "start", service_name], check=True)
 
-                print(
-                    f"\033[92m[INFO]:\033[97m Service installed and started: {service_name}"
-                )
+                print(f"\033[92m[INFO]:\033[97m Service installed and started: {service_name}")
                 print("\033[93m[NOTE]:\033[97m Service will auto-start on login")
 
             except subprocess.CalledProcessError as e:
                 print(f"\033[91m[ERROR]: Systemd command failed: {e}\033[0m")
             except Exception as e:
-                print(
-                    f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
+                print(f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
 
         elif action == "uninstall":
             try:
@@ -87,13 +79,11 @@ class LinuxAutostartManager(IAutostartManager):
                 if service_file.exists():
                     service_file.unlink()
 
-                subprocess.run(
-                    ["systemctl", "--user", "daemon-reload"], check=True)
+                subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
 
                 print("\033[92m[INFO]:\033[97m Service removed from autostart")
 
             except subprocess.CalledProcessError as e:
                 print(f"\033[91m[ERROR]: Systemd command failed: {e}\033[0m")
             except Exception as e:
-                print(
-                    f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")
+                print(f"\033[91m[ERROR]: Autostart operation failed: {e}\033[0m")

@@ -1,6 +1,7 @@
 """Application wiring: parse arguments, build components, run the server"""
 
 import asyncio
+import contextlib
 import logging
 import os
 import sys
@@ -48,8 +49,7 @@ async def run() -> None:
 
     config = config_from_args(args)
 
-    logger = ProxyLogger(
-        config.log_access_file, config.log_error_file, config.quiet)
+    logger = ProxyLogger(config.log_access_file, config.log_error_file, config.quiet)
     blacklist_manager = create_blacklist_manager(config, logger)
     statistics = Statistics()
 
@@ -79,7 +79,5 @@ def main() -> None:
     if sys.platform == "win32":
         os.system("")  # enable ANSI escape sequences in the Windows console
 
-    try:
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(run())
-    except KeyboardInterrupt:
-        pass

@@ -1,7 +1,6 @@
 """HTTP proxy protocol helpers: request parsing, authorization, fixed responses"""
 
 import base64
-
 from typing import Optional, Tuple
 
 CONNECTION_ESTABLISHED = b"HTTP/1.1 200 Connection Established\r\n\r\n"
@@ -27,8 +26,7 @@ def parse_http_request(http_data: bytes) -> Tuple[bytes, bytes, int]:
         host = host_port[0]
         port = int(host_port[1]) if len(host_port) > 1 else 443
     else:
-        host_header = next(
-            (h for h in headers if h.startswith(b"Host: ")), None)
+        host_header = next((h for h in headers if h.startswith(b"Host: ")), None)
         if not host_header:
             raise ValueError("Missing Host header")
 
@@ -39,9 +37,7 @@ def parse_http_request(http_data: bytes) -> Tuple[bytes, bytes, int]:
     return method, host, port
 
 
-def check_basic_auth(
-    http_data: bytes, username: Optional[str], password: Optional[str]
-) -> bool:
+def check_basic_auth(http_data: bytes, username: Optional[str], password: Optional[str]) -> bool:
     """Check the Proxy-Authorization header against the expected credentials"""
 
     auth_header = None

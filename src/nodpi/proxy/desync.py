@@ -2,7 +2,6 @@
 
 import asyncio
 import socket
-
 from typing import List
 
 DISORDER_TTL = 1
@@ -16,9 +15,7 @@ async def send_plain(writer: asyncio.StreamWriter, parts: List[bytes]) -> None:
     await writer.drain()
 
 
-async def send_disorder(
-    writer: asyncio.StreamWriter, first: bytes, rest: bytes
-) -> None:
+async def send_disorder(writer: asyncio.StreamWriter, first: bytes, rest: bytes) -> None:
     """
     Send the first segment with a low TTL so it is dropped before DPI,
     then the rest normally. The kernel retransmits the first segment

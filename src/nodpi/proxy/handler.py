@@ -2,7 +2,6 @@
 
 import asyncio
 import traceback
-
 from typing import Dict, List, Tuple
 
 from nodpi.config import ProxyConfig
@@ -61,8 +60,7 @@ class ConnectionHandler(IConnectionHandler):
 
             method, host, port = http.parse_http_request(http_data)
             conn_key = (client_ip, client_port)
-            conn_info = ConnectionInfo(
-                client_ip, host.decode(), method.decode())
+            conn_info = ConnectionInfo(client_ip, host.decode(), method.decode())
 
             if method == b"CONNECT":
                 await self.blacklist_manager.check_domain(host)
@@ -77,13 +75,9 @@ class ConnectionHandler(IConnectionHandler):
                 return
 
             if method == b"CONNECT":
-                await self._handle_https_connection(
-                    reader, writer, host, port, conn_key, conn_info
-                )
+                await self._handle_https_connection(reader, writer, host, port, conn_key, conn_info)
             else:
-                await self._handle_http_connection(
-                    reader, writer, http_data, host, port, conn_key
-                )
+                await self._handle_http_connection(reader, writer, http_data, host, port, conn_key)
 
         except Exception:
             await self._handle_connection_error(writer, conn_key)
@@ -183,8 +177,7 @@ class ConnectionHandler(IConnectionHandler):
             record_len = int.from_bytes(head[3:5], "big")
             data = await reader.readexactly(record_len)
         except Exception:
-            self.logger.log_error(
-                f"{host.decode()} : {traceback.format_exc()}")
+            self.logger.log_error(f"{host.decode()} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
             return
 
@@ -225,12 +218,10 @@ class ConnectionHandler(IConnectionHandler):
             self.tasks.extend(
                 [
                     asyncio.create_task(
-                        self._pipe_data(
-                            client_reader, remote_writer, "out", conn_key)
+                        self._pipe_data(client_reader, remote_writer, "out", conn_key)
                     ),
                     asyncio.create_task(
-                        self._pipe_data(
-                            remote_reader, client_writer, "in", conn_key)
+                        self._pipe_data(remote_reader, client_writer, "in", conn_key)
                     ),
                 ]
             )
@@ -268,8 +259,7 @@ class ConnectionHandler(IConnectionHandler):
         except asyncio.CancelledError:
             pass
         except Exception:
-            self.logger.log_error(
-                f"{conn_info.dst_domain} : {traceback.format_exc()}")
+            self.logger.log_error(f"{conn_info.dst_domain} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
         finally:
             try:
@@ -301,8 +291,7 @@ class ConnectionHandler(IConnectionHandler):
 
         self.statistics.increment_total_connections()
         self.statistics.increment_error_connections()
-        self.logger.log_error(
-            f"{conn_info.dst_domain} : {traceback.format_exc()}")
+        self.logger.log_error(f"{conn_info.dst_domain} : {traceback.format_exc()}")
 
         try:
             writer.close()

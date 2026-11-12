@@ -1,7 +1,6 @@
 """Connection and traffic counters"""
 
 import time
-
 from typing import Optional, Tuple
 
 from nodpi.interfaces import IStatistics
@@ -56,11 +55,8 @@ class Statistics(IStatistics):
         if self.last_time is not None:
             time_diff = current_time - self.last_time
             if time_diff > 0:
-                self.speed_in = (self.traffic_in -
-                                 self.last_traffic_in) * 8 / time_diff
-                self.speed_out = (
-                    (self.traffic_out - self.last_traffic_out) * 8 / time_diff
-                )
+                self.speed_in = (self.traffic_in - self.last_traffic_in) * 8 / time_diff
+                self.speed_out = (self.traffic_out - self.last_traffic_out) * 8 / time_diff
 
                 if self.speed_in > 0:
                     self.average_speed_in = (

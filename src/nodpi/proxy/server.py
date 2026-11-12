@@ -2,7 +2,6 @@
 
 import asyncio
 import sys
-
 from typing import Optional
 
 from nodpi.config import ProxyConfig
@@ -29,9 +28,7 @@ class ProxyServer:
         self.blacklist_manager = blacklist_manager
         self.statistics = statistics
         self.logger = logger
-        self.connection_handler = ConnectionHandler(
-            config, blacklist_manager, statistics, logger
-        )
+        self.connection_handler = ConnectionHandler(config, blacklist_manager, statistics, logger)
         self.server: Optional[asyncio.AbstractServer] = None
 
     async def print_banner(self) -> None:
@@ -39,8 +36,7 @@ class ProxyServer:
 
         update_message = await get_update_message()
         print_disclaimer(self.logger)
-        print_main_screen(self.logger, self.config,
-                          self.blacklist_manager, update_message)
+        print_main_screen(self.logger, self.config, self.blacklist_manager, update_message)
 
     async def display_stats(self) -> None:
         """Display live statistics"""

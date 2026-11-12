@@ -1,7 +1,6 @@
 """Abstract interfaces shared between the proxy components"""
 
 import asyncio
-
 from abc import ABC, abstractmethod
 from typing import List
 

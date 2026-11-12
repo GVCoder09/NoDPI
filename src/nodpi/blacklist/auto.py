@@ -1,7 +1,6 @@
 """Blacklist that detects blocked domains automatically"""
 
 import ssl
-
 from typing import List
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -31,9 +30,7 @@ class AutoBlacklistManager(IBlacklistManager):
             return
 
         try:
-            req = Request(
-                f"https://{domain.decode()}", headers={"User-Agent": "Mozilla/5.0"}
-            )
+            req = Request(f"https://{domain.decode()}", headers={"User-Agent": "Mozilla/5.0"})
             context = ssl._create_unverified_context()
 
             with urlopen(req, timeout=4, context=context):

@@ -20,10 +20,7 @@ def extract_sni_position(data: bytes) -> Optional[Tuple[int, int]]:
             ext_len = data[i + 3]
             server_name_list_len = data[i + 5]
             server_name_len = data[i + 8]
-            if (
-                ext_len - server_name_list_len == 2
-                and server_name_list_len - server_name_len == 3
-            ):
+            if ext_len - server_name_list_len == 2 and server_name_list_len - server_name_len == 3:
                 sni_start = i + 9
                 sni_end = sni_start + server_name_len
                 return sni_start, sni_end
@@ -48,11 +45,11 @@ def fragment_client_hello(head: bytes, data: bytes) -> List[bytes]:
         return [head + data]
 
     part_start = data[: sni_pos[0]]
-    sni_data = data[sni_pos[0]: sni_pos[1]]
-    part_end = data[sni_pos[1]:]
+    sni_data = data[sni_pos[0] : sni_pos[1]]
+    part_end = data[sni_pos[1] :]
 
     parts = [_record(part_start)]
     for i in range(0, len(sni_data), SNI_CHUNK_SIZE):
-        parts.append(_record(sni_data[i: i + SNI_CHUNK_SIZE]))
+        parts.append(_record(sni_data[i : i + SNI_CHUNK_SIZE]))
     parts.append(_record(part_end))
     return parts

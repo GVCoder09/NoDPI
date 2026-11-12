@@ -4,9 +4,8 @@ Implementation the Windows tray minimization control
 
 import os
 import sys
-import time
 import threading
-
+import time
 from typing import Optional
 
 if sys.platform != "win32":
@@ -132,9 +131,7 @@ class WindowsTrayIcon:
 
     def start(self) -> None:
 
-        self._thread = threading.Thread(
-            target=self._message_loop, daemon=True, name="TrayThread"
-        )
+        self._thread = threading.Thread(target=self._message_loop, daemon=True, name="TrayThread")
         self._thread.start()
         time.sleep(0.3)
         self._install_minimize_hook()
@@ -255,29 +252,21 @@ class WindowsTrayIcon:
     def _remove_tray_icon(self) -> None:
 
         if self.nid:
-            ctypes.windll.shell32.Shell_NotifyIconW(
-                NIM_DELETE, ctypes.byref(self.nid))
+            ctypes.windll.shell32.Shell_NotifyIconW(NIM_DELETE, ctypes.byref(self.nid))
             self.nid = None
 
     def _show_context_menu(self, hwnd: int) -> None:
 
         hmenu = ctypes.windll.user32.CreatePopupMenu()
 
-        ctypes.windll.user32.AppendMenuW(
-            hmenu, MF_STRING, ID_TRAY_SHOW, ctypes.c_wchar_p("Show")
-        )
-        ctypes.windll.user32.AppendMenuW(
-            hmenu, MF_SEPARATOR, 0, ctypes.c_wchar_p(None))
-        ctypes.windll.user32.AppendMenuW(
-            hmenu, MF_STRING, ID_TRAY_EXIT, ctypes.c_wchar_p("Exit")
-        )
+        ctypes.windll.user32.AppendMenuW(hmenu, MF_STRING, ID_TRAY_SHOW, ctypes.c_wchar_p("Show"))
+        ctypes.windll.user32.AppendMenuW(hmenu, MF_SEPARATOR, 0, ctypes.c_wchar_p(None))
+        ctypes.windll.user32.AppendMenuW(hmenu, MF_STRING, ID_TRAY_EXIT, ctypes.c_wchar_p("Exit"))
 
         pt = ctypes.wintypes.POINT()
         ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
         ctypes.windll.user32.SetForegroundWindow(hwnd)
-        ctypes.windll.user32.TrackPopupMenu(
-            hmenu, TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, None
-        )
+        ctypes.windll.user32.TrackPopupMenu(hmenu, TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, None)
         ctypes.windll.user32.PostMessageW(hwnd, 0, 0, 0)
         ctypes.windll.user32.DestroyMenu(hmenu)
 
@@ -286,8 +275,7 @@ class WindowsTrayIcon:
         if not self._console_hwnd:
             return
 
-        orig = ctypes.windll.user32.GetWindowLongPtrW(
-            self._console_hwnd, GWL_WNDPROC)
+        orig = ctypes.windll.user32.GetWindowLongPtrW(self._console_hwnd, GWL_WNDPROC)
 
         if orig is None or orig == 0:
             self._start_minimize_polling()

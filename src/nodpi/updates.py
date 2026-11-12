@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-
 from typing import Optional
 from urllib.request import Request, urlopen
 

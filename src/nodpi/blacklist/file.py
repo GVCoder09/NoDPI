@@ -1,7 +1,6 @@
 """Blacklist loaded from a text file"""
 
 import os
-
 from typing import List
 
 from nodpi.config import ProxyConfig
@@ -24,7 +23,7 @@ class FileBlacklistManager(IBlacklistManager):
         if not os.path.exists(self.blacklist_file):
             raise FileNotFoundError(f"File {self.blacklist_file} not found")
 
-        with open(self.blacklist_file, "r", encoding="utf-8", errors="ignore") as f:
+        with open(self.blacklist_file, encoding="utf-8", errors="ignore") as f:
             for line in f:
                 if len(line.strip()) < 2 or line.strip()[0] == "#":
                     continue

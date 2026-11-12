@@ -1,7 +1,6 @@
 """Command line arguments"""
 
 import argparse
-
 from typing import List, Optional
 
 from nodpi.config import ProxyConfig
@@ -43,22 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Domain matching mode (strict by default)",
     )
 
-    parser.add_argument(
-        "--auth-username", required=False, help="Username for proxy authentication"
-    )
-    parser.add_argument(
-        "--auth-password", required=False, help="Password for proxy authentication"
-    )
+    parser.add_argument("--auth-username", required=False, help="Username for proxy authentication")
+    parser.add_argument("--auth-password", required=False, help="Password for proxy authentication")
 
-    parser.add_argument(
-        "--log-access", required=False, help="Path to the access control log"
-    )
-    parser.add_argument(
-        "--log-error", required=False, help="Path to log file for errors"
-    )
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Remove UI output"
-    )
+    parser.add_argument("--log-access", required=False, help="Path to the access control log")
+    parser.add_argument("--log-error", required=False, help="Path to log file for errors")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Remove UI output")
     parser.add_argument(
         "--start-in-tray",
         action="store_true",

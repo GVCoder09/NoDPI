@@ -4,7 +4,6 @@ import os
 import sys
 import textwrap
 import time
-
 from datetime import datetime
 from typing import Optional
 
@@ -49,24 +48,16 @@ def print_disclaimer(logger: ILogger) -> None:
     if sys.platform == "win32":
         os.system("mode con: lines=33")
 
-    if sys.stdout.isatty():
-        console_width = os.get_terminal_size().columns
-    else:
-        console_width = 80
+    console_width = os.get_terminal_size().columns if sys.stdout.isatty() else 80
 
     wrapped_text = textwrap.TextWrapper(width=70).wrap(DISCLAIMER)
     left_padding = (console_width - 76) // 2
 
     logger.info("\n\n\n")
-    logger.info("\033[91m" + " " * left_padding +
-                "╭" + "─" * 72 + "╮" + "\033[0m")
+    logger.info("\033[91m" + " " * left_padding + "╭" + "─" * 72 + "╮" + "\033[0m")
     for line in wrapped_text:
-        logger.info(
-            "\033[91m" + " " * left_padding +
-            "│ " + line.ljust(70) + " │" + "\033[0m"
-        )
-    logger.info("\033[91m" + " " * left_padding +
-                "╰" + "─" * 72 + "╯" + "\033[0m")
+        logger.info("\033[91m" + " " * left_padding + "│ " + line.ljust(70) + " │" + "\033[0m")
+    logger.info("\033[91m" + " " * left_padding + "╰" + "─" * 72 + "╯" + "\033[0m")
 
     time.sleep(1)
 
@@ -82,8 +73,7 @@ def print_main_screen(
     logger.info("\033[2J\033[H")
     logger.info(LOGO)
     logger.info(f"\033[92mVersion: {__version__}".center(50))
-    logger.info(
-        "\033[97m" + "Enjoy watching! / Наслаждайтесь просмотром!".center(50))
+    logger.info("\033[97m" + "Enjoy watching! / Наслаждайтесь просмотром!".center(50))
     logger.info("\n")
 
     if update_message:
@@ -100,14 +90,14 @@ def print_main_screen(
 
     logger.info("")
     if config.log_error_file:
-        logger.info(
-            f"{INFO}Error logging is enabled. Path to error log: '{config.log_error_file}'")
+        logger.info(f"{INFO}Error logging is enabled. Path to error log: '{config.log_error_file}'")
     else:
         logger.info(f"{INFO}Error logging is disabled")
 
     if config.log_access_file:
         logger.info(
-            f"{INFO}Access logging is enabled. Path to access log: '{config.log_access_file}'")
+            f"{INFO}Access logging is enabled. Path to access log: '{config.log_access_file}'"
+        )
     else:
         logger.info(f"{INFO}Access logging is disabled")
 

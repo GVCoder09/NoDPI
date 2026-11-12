@@ -12,14 +12,13 @@ def render_stats(stats: Statistics) -> str:
 
     col_width = COL_WIDTH
 
-    conns_stat = f"\033[97mTotal: \033[93m{stats.total_connections}\033[0m".ljust(
-        col_width
-    ) + "\033[97m| " + f"\033[97mMiss: \033[96m{stats.allowed_connections}\033[0m".ljust(
-        col_width
-    ) + "\033[97m| " + f"\033[97mUnblock: \033[92m{stats.blocked_connections}\033[0m".ljust(
-        col_width
-    ) + "\033[97m| " f"\033[97mErrors: \033[91m{stats.errors_connections}\033[0m".ljust(
-        col_width
+    conns_stat = (
+        f"\033[97mTotal: \033[93m{stats.total_connections}\033[0m".ljust(col_width)
+        + "\033[97m| "
+        + f"\033[97mMiss: \033[96m{stats.allowed_connections}\033[0m".ljust(col_width)
+        + "\033[97m| "
+        + f"\033[97mUnblock: \033[92m{stats.blocked_connections}\033[0m".ljust(col_width)
+        + f"\033[97m| \033[97mErrors: \033[91m{stats.errors_connections}\033[0m".ljust(col_width)
     )
 
     traffic_stat = (
@@ -27,32 +26,20 @@ def render_stats(stats: Statistics) -> str:
             col_width
         )
         + "\033[97m| "
-        + f"\033[97mDL: \033[96m{format_size(stats.traffic_in)}\033[0m".ljust(
-            col_width
-        )
+        + f"\033[97mDL: \033[96m{format_size(stats.traffic_in)}\033[0m".ljust(col_width)
         + "\033[97m| "
-        + f"\033[97mUL: \033[96m{format_size(stats.traffic_out)}\033[0m".ljust(
-            col_width
-        )
+        + f"\033[97mUL: \033[96m{format_size(stats.traffic_out)}\033[0m".ljust(col_width)
         + "\033[97m| "
     )
 
     speed_stat = (
-        f"\033[97mDL: \033[96m{format_speed(stats.speed_in)}\033[0m".ljust(
-            col_width
-        )
+        f"\033[97mDL: \033[96m{format_speed(stats.speed_in)}\033[0m".ljust(col_width)
         + "\033[97m| "
-        + f"\033[97mUL: \033[96m{format_speed(stats.speed_out)}\033[0m".ljust(
-            col_width
-        )
+        + f"\033[97mUL: \033[96m{format_speed(stats.speed_out)}\033[0m".ljust(col_width)
         + "\033[97m| "
-        + f"\033[97mAVG DL: \033[96m{format_speed(stats.average_in)}\033[0m".ljust(
-            col_width
-        )
+        + f"\033[97mAVG DL: \033[96m{format_speed(stats.average_in)}\033[0m".ljust(col_width)
         + "\033[97m| "
-        + f"\033[97mAVG UL: \033[96m{format_speed(stats.average_out)}\033[0m".ljust(
-            col_width
-        )
+        + f"\033[97mAVG UL: \033[96m{format_speed(stats.average_out)}\033[0m".ljust(col_width)
     )
 
     inner_width = 35 + 1 + len(TITLE) + 1 + 35

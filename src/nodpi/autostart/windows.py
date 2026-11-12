@@ -19,21 +19,16 @@ class WindowsAutostartManager(IAutostartManager):
         import winreg  # pylint: disable=import-outside-toplevel,import-error
 
         exe_path = sys.executable
+        blacklist_path = f"{os.path.dirname(exe_path)}/blacklist.txt"
+        command = f'"{exe_path}" --blacklist "{blacklist_path}" --start-in-tray'
 
         try:
             key = winreg.HKEY_CURRENT_USER
 
             if action == "install":
                 with winreg.OpenKey(key, REG_PATH, 0, winreg.KEY_WRITE) as regkey:
-                    winreg.SetValueEx(
-                        regkey,
-                        APP_NAME,
-                        0,
-                        winreg.REG_SZ,
-                        f'"{exe_path}" --blacklist "{os.path.dirname(exe_path)}/blacklist.txt" --start-in-tray',
-                    )
-                print(
-                    f"\033[92m[INFO]:\033[97m Added to autostart: {exe_path}")
+                    winreg.SetValueEx(regkey, APP_NAME, 0, winreg.REG_SZ, command)
+                print(f"\033[92m[INFO]:\033[97m Added to autostart: {exe_path}")
 
             elif action == "uninstall":
                 try:
