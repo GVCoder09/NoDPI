@@ -2,7 +2,7 @@
 
 import asyncio
 import traceback
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from nodpi.config import ProxyConfig
 from nodpi.interfaces import (
@@ -50,6 +50,7 @@ class ConnectionHandler(IConnectionHandler):
     ) -> None:
         """Handle incoming client connection"""
 
+        conn_key: Optional[ConnKey] = None
         try:
             client_ip, client_port = writer.get_extra_info("peername")
             http_data = await reader.read(READ_CHUNK)
@@ -282,30 +283,31 @@ class ConnectionHandler(IConnectionHandler):
         return f"{conn_key[0]}:{conn_key[1]}"
 
     async def _handle_connection_error(
-        self, writer: asyncio.StreamWriter, conn_key: ConnKey
+        self, writer: asyncio.StreamWriter, conn_key: Optional[ConnKey]
     ) -> None:
         """Answer 500, count the error and close the client connection"""
 
+        label = self._conn_label(conn_key) if conn_key else "unknown"
         try:
             writer.write(http.INTERNAL_SERVER_ERROR)
             await writer.drain()
-
             self.statistics.update_traffic(len(http.INTERNAL_SERVER_ERROR), 0)
         except Exception:
             pass
+        finally:
+            if conn_key:
+                async with self.connections_lock:
+                    self.active_connections.pop(conn_key, None)
 
-        async with self.connections_lock:
-            conn_info = self.active_connections.pop(conn_key, None)
+            self.statistics.increment_total_connections()
+            self.statistics.increment_error_connections()
+            self.logger.log_error(f"{label} : {traceback.format_exc()}")
 
-        self.statistics.increment_total_connections()
-        self.statistics.increment_error_connections()
-        self.logger.log_error(f"{conn_info.dst_domain} : {traceback.format_exc()}")
-
-        try:
-            writer.close()
-            await writer.wait_closed()
-        except BaseException:  # also swallow CancelledError while closing
-            pass
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except BaseException:  # also swallow CancelledError while closing
+                pass
 
     async def cleanup_tasks(self) -> None:
         """Periodically drop finished piping tasks"""
