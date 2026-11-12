@@ -6,6 +6,9 @@ from typing import List
 
 DISORDER_TTL = 1
 DISORDER_DELAY = 0.01
+OOB_BYTE = b"\x00"
+OOB_DELAY = 0.005
+FLUSH_TIMEOUT = 2
 
 
 async def send_plain(writer: asyncio.StreamWriter, parts: List[bytes]) -> None:
@@ -40,6 +43,36 @@ async def send_disorder(writer: asyncio.StreamWriter, first: bytes, rest: bytes)
         sock.setsockopt(level, option, default_ttl)
 
     writer.write(rest)
+    await writer.drain()
+
+
+async def _wait_flushed(writer: asyncio.StreamWriter) -> None:
+    deadline = asyncio.get_running_loop().time() + FLUSH_TIMEOUT
+    while writer.transport.get_write_buffer_size() > 0:
+        if asyncio.get_running_loop().time() > deadline:
+            raise TimeoutError("write buffer was not flushed")
+        await asyncio.sleep(0.001)
+
+
+async def send_oob(writer: asyncio.StreamWriter, parts: List[bytes]) -> None:
+    """Send the parts with one urgent (MSG_OOB) byte in the middle, ignored by the server"""
+
+    mid = len(parts) // 2
+    tsock = writer.get_extra_info("socket")
+    tsock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+    writer.write(b"".join(parts[:mid]))
+    await writer.drain()
+    await _wait_flushed(writer)
+
+    raw = socket.socket(tsock.family, tsock.type, tsock.proto, fileno=tsock.fileno())
+    try:
+        raw.send(OOB_BYTE, socket.MSG_OOB)
+    finally:
+        raw.detach()
+    await asyncio.sleep(OOB_DELAY)
+
+    writer.write(b"".join(parts[mid:]))
     await writer.drain()
 
 
