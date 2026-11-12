@@ -13,6 +13,7 @@ from nodpi.interfaces import (
 )
 from nodpi.proxy import http
 from nodpi.proxy.connection import ConnectionInfo
+from nodpi.proxy.dead_hosts import DeadHosts
 from nodpi.proxy.desync import send_fragments
 from nodpi.proxy.race import race_client_hello
 from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_client_hello
@@ -49,6 +50,7 @@ class ConnectionHandler(IConnectionHandler):
         self.connections_lock = asyncio.Lock()
         self.tasks: List[asyncio.Task] = []
         self.tasks_lock = asyncio.Lock()
+        self.dead_hosts = DeadHosts()
 
     # ------------------------------------------------------------------ entry
 
@@ -134,6 +136,13 @@ class ConnectionHandler(IConnectionHandler):
     ) -> None:
         """Handle HTTPS CONNECT request"""
 
+        if self.config.retries and self.dead_hosts.is_dead(conn_info.dst_domain):
+            writer.write(http.BAD_GATEWAY)
+            await writer.drain()
+            self.statistics.update_traffic(len(http.BAD_GATEWAY), 0)
+            await self._close_unpiped(writer, None, conn_key)
+            return
+
         response_size = len(http.CONNECTION_ESTABLISHED)
         self.statistics.update_traffic(response_size, 0)
         conn_info.traffic_in += response_size
@@ -205,8 +214,16 @@ class ConnectionHandler(IConnectionHandler):
                 f"{attempts} attempts in {FIRST_RESPONSE_TIMEOUT} s"
             )
             self.statistics.increment_error_connections()
+            if self.dead_hosts.record_failure(conn_info.dst_domain):
+                self.logger.log_error(
+                    f"{conn_info.dst_domain} : no response "
+                    f"{self.dead_hosts.failures_to_mark} times in a row, "
+                    f"refusing connections to it for {self.dead_hosts.ttl} s"
+                )
             await self._close_unpiped(writer, first_connection[1], conn_key)
             return
+
+        self.dead_hosts.record_success(conn_info.dst_domain)
 
         remote_reader, remote_writer, first, _ = winner
         writer.write(first)
@@ -219,12 +236,14 @@ class ConnectionHandler(IConnectionHandler):
     async def _close_unpiped(
         self,
         client_writer: asyncio.StreamWriter,
-        remote_writer: asyncio.StreamWriter,
+        remote_writer: Optional[asyncio.StreamWriter],
         conn_key: ConnKey,
     ) -> None:
         """Close both sides of a connection that never reached piping"""
 
         for w in (remote_writer, client_writer):
+            if w is None:
+                continue
             try:
                 w.close()
                 await w.wait_closed()

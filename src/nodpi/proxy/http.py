@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 
 CONNECTION_ESTABLISHED = b"HTTP/1.1 200 Connection Established\r\n\r\n"
 INTERNAL_SERVER_ERROR = b"HTTP/1.1 500 Internal Server Error\r\n\r\n"
+BAD_GATEWAY = b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
 PROXY_AUTH_REQUIRED = (
     b"HTTP/1.1 407 Proxy Authentication Required\r\n"
     b'Proxy-Authenticate: Basic realm="NoDPI Proxy"\r\n'
