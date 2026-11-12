@@ -16,6 +16,7 @@ class ProxyConfig:
         self.blacklist_file = "blacklist.txt"
         self.disordering = True
         self.retries = True
+        self.skip_dead_hosts = True
         self.domain_matching = "strict"
         self.log_access_file: Optional[str] = None
         self.log_error_file: Optional[str] = None

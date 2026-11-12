@@ -136,7 +136,11 @@ class ConnectionHandler(IConnectionHandler):
     ) -> None:
         """Handle HTTPS CONNECT request"""
 
-        if self.config.retries and self.dead_hosts.is_dead(conn_info.dst_domain):
+        if (
+            self.config.retries
+            and self.config.skip_dead_hosts
+            and self.dead_hosts.is_dead(conn_info.dst_domain)
+        ):
             writer.write(http.BAD_GATEWAY)
             await writer.drain()
             self.statistics.update_traffic(len(http.BAD_GATEWAY), 0)
@@ -214,7 +218,7 @@ class ConnectionHandler(IConnectionHandler):
                 f"{attempts} attempts in {FIRST_RESPONSE_TIMEOUT} s"
             )
             self.statistics.increment_error_connections()
-            if self.dead_hosts.record_failure(conn_info.dst_domain):
+            if self.config.skip_dead_hosts and self.dead_hosts.record_failure(conn_info.dst_domain):
                 self.logger.log_error(
                     f"{conn_info.dst_domain} : no response "
                     f"{self.dead_hosts.failures_to_mark} times in a row, "

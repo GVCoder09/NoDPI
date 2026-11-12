@@ -42,6 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not retry the ClientHello over new connections when the server is silent",
     )
     parser.add_argument(
+        "--no-skip-dead-hosts",
+        dest="skip_dead_hosts",
+        action="store_false",
+        help="Do not refuse connections to hosts that failed several times in a row",
+    )
+    parser.add_argument(
         "--domain-matching",
         default="strict",
         choices=["loose", "strict"],
@@ -93,6 +99,7 @@ def config_from_args(args: argparse.Namespace) -> ProxyConfig:
     config.blacklist_file = args.blacklist
     config.disordering = args.disordering
     config.retries = args.retries
+    config.skip_dead_hosts = args.skip_dead_hosts
     config.domain_matching = args.domain_matching
     config.log_access_file = args.log_access
     config.log_error_file = args.log_error

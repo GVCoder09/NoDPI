@@ -66,7 +66,7 @@ NoDPI launches a proxy server on your computer through which you direct http(s) 
 
 The packet contains a field that holds the SNI record. The ClientHello message is split into several TLS records: the portion preceding the SNI, the portion containing the SNI (character by character), and the portion following the SNI. A header indicating the ClientHello type is added to each of these parts. Unless out-of-order packet handling (disordering) is disabled, the first of these parts is sent with a TTL=1, causing it to be dropped by the nearest network device. As a result, the DPI (Deep Packet Inspection) system fails to identify the domain for which the connection is being established and allows the connection to proceed. The operating system subsequently retransmits the first part with a standard TTL.
 
-Some providers let only part of such connections through. So if the server does not answer, NoDPI quickly tries again over a few new connections, using different methods, and keeps the first one that works. If nothing works within 8 seconds, the connection is closed instead of hanging until the browser times out. Retries can be disabled with `--no-retry`.
+Some providers let only part of such connections through. So if the server does not answer, NoDPI quickly tries again over a few new connections, using different methods, and keeps the first one that works. If nothing works within 8 seconds, the connection is closed instead of hanging until the browser times out. If a host fails like this twice in a row, NoDPI refuses connections to it for 5 minutes (disable with `--no-skip-dead-hosts`). Retries can be disabled with `--no-retry`.
 
 Also, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock.
 
@@ -159,7 +159,7 @@ By default, a blacklist containing YouTube-only domains is used. Additional list
 ```
 usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
 [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
-               [--no-disorder] [--no-retry]
+               [--no-disorder] [--no-retry] [--no-skip-dead-hosts]
                [--domain-matching {loose,strict}] 
                [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
                [-q] [--start-in-tray]
@@ -177,6 +177,8 @@ options:
   --no-disorder         Disable disordering
   --no-retry            Do not retry the ClientHello over new connections when
                         the server is silent
+  --no-skip-dead-hosts  Do not refuse connections to hosts that failed several
+                        times in a row
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
   --auth-username AUTH_USERNAME
