@@ -68,6 +68,8 @@ The packet contains a field that holds the SNI record. The ClientHello message i
 
 Some providers let only part of such connections through. So if the server does not answer, NoDPI quickly tries again over a few new connections, using different methods, and keeps the first one that works. If nothing works within 8 seconds, the connection is closed instead of hanging until the browser times out. If a host fails like this twice in a row, NoDPI refuses connections to it for 5 minutes (disable with `--no-skip-dead-hosts`). Retries can be disabled with `--no-retry`.
 
+Site names are resolved via DNS over HTTPS (Google, then Cloudflare, then the system DNS), so the provider cannot spoof DNS answers. Local names always use the system DNS. You can add your own server with `--doh-server` or disable this with `--no-doh`.
+
 Also, the TLS version is replaced by version 1.3, which is the most modern (but this does not mean that your data begins to be transmitted according to the specifications of this version). All this together allows you to get around the lock.
 
 > [!IMPORTANT]
@@ -160,6 +162,7 @@ By default, a blacklist containing YouTube-only domains is used. Additional list
 usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
 [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
                [--no-disorder] [--no-retry] [--no-skip-dead-hosts]
+               [--no-doh] [--doh-server URL]
                [--domain-matching {loose,strict}] 
                [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
                [-q] [--start-in-tray]
@@ -179,6 +182,10 @@ options:
                         the server is silent
   --no-skip-dead-hosts  Do not refuse connections to hosts that failed several
                         times in a row
+  --no-doh              Resolve names with the system DNS instead of DNS over
+                        HTTPS
+  --doh-server URL      Own DoH resolver tried first, must support HTTP/1.1,
+                        e.g. https://94.140.14.14/dns-query (can be repeated)
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
   --auth-username AUTH_USERNAME

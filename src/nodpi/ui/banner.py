@@ -9,6 +9,7 @@ from typing import Optional
 
 from nodpi import __version__
 from nodpi.config import ProxyConfig
+from nodpi.dns import Resolver
 from nodpi.interfaces import IBlacklistManager, ILogger
 
 DISCLAIMER = (
@@ -66,6 +67,7 @@ def print_main_screen(
     logger: ILogger,
     config: ProxyConfig,
     blacklist_manager: IBlacklistManager,
+    resolver: Resolver,
     update_message: Optional[str],
 ) -> None:
     """Clear the screen and show logo, version and configuration summary"""
@@ -87,6 +89,7 @@ def print_main_screen(
     logger.info("")
     for line in blacklist_manager.describe():
         logger.info(INFO + line)
+    logger.info(f"{INFO}{resolver.describe()}")
 
     logger.info("")
     if config.log_error_file:

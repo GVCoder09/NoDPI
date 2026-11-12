@@ -6,6 +6,7 @@ from nodpi.blacklist.auto import AutoBlacklistManager
 from nodpi.blacklist.file import FileBlacklistManager
 from nodpi.blacklist.none import NoBlacklistManager
 from nodpi.config import ProxyConfig
+from nodpi.dns import Resolver
 from nodpi.interfaces import IBlacklistManager, ILogger
 
 __all__ = [
@@ -16,13 +17,15 @@ __all__ = [
 ]
 
 
-def create_blacklist_manager(config: ProxyConfig, logger: ILogger) -> IBlacklistManager:
+def create_blacklist_manager(
+    config: ProxyConfig, logger: ILogger, resolver: Resolver
+) -> IBlacklistManager:
     """Create the blacklist manager selected by the config"""
 
     if config.no_blacklist:
         return NoBlacklistManager()
     if config.auto_blacklist:
-        return AutoBlacklistManager(config)
+        return AutoBlacklistManager(config, resolver)
 
     try:
         return FileBlacklistManager(config)

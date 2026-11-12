@@ -1,6 +1,6 @@
 """Proxy configuration"""
 
-from typing import Optional
+from typing import List, Optional
 
 
 class ProxyConfig:
@@ -17,6 +17,8 @@ class ProxyConfig:
         self.disordering = True
         self.retries = True
         self.skip_dead_hosts = True
+        self.doh = True
+        self.doh_servers: List[str] = []
         self.domain_matching = "strict"
         self.log_access_file: Optional[str] = None
         self.log_error_file: Optional[str] = None

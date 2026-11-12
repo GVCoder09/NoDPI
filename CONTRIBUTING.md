@@ -48,12 +48,14 @@ src/
     ├── app.py           wiring: arguments, components, startup
     ├── cli.py           command line arguments
     ├── config.py        ProxyConfig
+    ├── net.py           connecting to a list of addresses (happy eyeballs)
     ├── interfaces.py    abstract interfaces
     ├── logger.py        access/error logs and console output
     ├── statistics.py    traffic and connection counters
     ├── updates.py       new version check
     ├── blacklist/       file, auto and "no blacklist" modes
-    ├── proxy/           server, connection handling, HTTP, TLS fragmentation, desync
+    ├── dns/             DNS over HTTPS client and the resolver chain
+    ├── proxy/           server, connection handling, HTTP, TLS fragmentation, desync, retries
     ├── ui/              banner, live statistics, Windows tray
     └── autostart/       Windows registry and Linux systemd autostart
 ```

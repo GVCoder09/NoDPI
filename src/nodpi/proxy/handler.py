@@ -5,12 +5,14 @@ import traceback
 from typing import Dict, List, Optional, Tuple, Union
 
 from nodpi.config import ProxyConfig
+from nodpi.dns import Resolver
 from nodpi.interfaces import (
     IBlacklistManager,
     IConnectionHandler,
     ILogger,
     IStatistics,
 )
+from nodpi.net import connect_any
 from nodpi.proxy import http
 from nodpi.proxy.connection import ConnectionInfo
 from nodpi.proxy.dead_hosts import DeadHosts
@@ -19,7 +21,6 @@ from nodpi.proxy.race import race_client_hello
 from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_client_hello
 
 READ_CHUNK = 1500
-HAPPY_EYEBALLS_DELAY = 0.25
 CONNECT_TIMEOUT = 10
 CLIENT_HELLO_TIMEOUT = 30
 FIRST_RESPONSE_TIMEOUT = 8
@@ -38,9 +39,11 @@ class ConnectionHandler(IConnectionHandler):
         blacklist_manager: IBlacklistManager,
         statistics: IStatistics,
         logger: ILogger,
+        resolver: Resolver,
     ):
 
         self.config = config
+        self.resolver = resolver
         self.blacklist_manager = blacklist_manager
         self.statistics = statistics
         self.logger = logger
@@ -114,16 +117,13 @@ class ConnectionHandler(IConnectionHandler):
     async def _open_upstream(
         self, host: bytes, port: int
     ) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-        return await asyncio.wait_for(
-            asyncio.open_connection(
-                host.decode(),
-                port,
-                local_addr=(self.out_host, 0) if self.out_host else None,
-                happy_eyeballs_delay=HAPPY_EYEBALLS_DELAY,
-                interleave=1,
-            ),
-            CONNECT_TIMEOUT,
-        )
+        addresses = await self.resolver.resolve(host.decode())
+        sock = await asyncio.wait_for(connect_any(addresses, port, self.out_host), CONNECT_TIMEOUT)
+        try:
+            return await asyncio.open_connection(sock=sock)
+        except BaseException:
+            sock.close()
+            raise
 
     async def _handle_https_connection(
         self,

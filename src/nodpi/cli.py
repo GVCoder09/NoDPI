@@ -48,6 +48,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not refuse connections to hosts that failed several times in a row",
     )
     parser.add_argument(
+        "--no-doh",
+        dest="doh",
+        action="store_false",
+        help="Resolve names with the system DNS instead of DNS over HTTPS",
+    )
+    parser.add_argument(
+        "--doh-server",
+        dest="doh_servers",
+        action="append",
+        default=[],
+        metavar="URL",
+        help=(
+            "Own DoH resolver tried first, must support HTTP/1.1, "
+            "e.g. https://94.140.14.14/dns-query (can be repeated)"
+        ),
+    )
+    parser.add_argument(
         "--domain-matching",
         default="strict",
         choices=["loose", "strict"],
@@ -100,6 +117,8 @@ def config_from_args(args: argparse.Namespace) -> ProxyConfig:
     config.disordering = args.disordering
     config.retries = args.retries
     config.skip_dead_hosts = args.skip_dead_hosts
+    config.doh = args.doh
+    config.doh_servers = args.doh_servers
     config.domain_matching = args.domain_matching
     config.log_access_file = args.log_access
     config.log_error_file = args.log_error

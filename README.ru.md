@@ -66,6 +66,8 @@ NoDPI запускает на вашем компьютере прокси-се�
 
 У некоторых провайдеров такие соединения проходят лишь частично. Поэтому, если сервер не отвечает, NoDPI быстро пробует ещё раз по нескольким новым соединениям разными способами и оставляет первое сработавшее. Если за 8 секунд ничего не сработало, соединение закрывается, а не висит до таймаута браузера. Если так произошло с хостом дважды подряд, NoDPI 5 минут сразу отказывает в соединениях к нему (отключается параметром `--no-skip-dead-hosts`). Повторы можно отключить параметром `--no-retry`.
 
+Имена сайтов разрешаются через DNS over HTTPS (Google, затем Cloudflare, затем системный DNS), поэтому провайдер не может подменить ответы DNS. Локальные имена всегда разрешаются системным DNS. Свой сервер можно добавить параметром `--doh-server`, отключить — параметром `--no-doh`.
+
 Также, версия TLS заменяется на версию 1.3, которая является самой современной на данный момент (хотя это не означает, что ваши данные начинают передаваться в соответствии со спецификациями этой версии). Всё это в совокупности позволяет обойти блокировку.
 
 > [!IMPORTANT]
@@ -158,6 +160,7 @@ NoDPI не собирает и не отправляет никаких данн
 usage: nodpi [-h] [--host HOST] [--port PORT] [--out-host OUT_HOST] 
 [--blacklist BLACKLIST | --no-blacklist | --autoblacklist]
                [--no-disorder] [--no-retry] [--no-skip-dead-hosts]
+               [--no-doh] [--doh-server URL]
                [--domain-matching {loose,strict}] 
                [--auth-username AUTH_USERNAME] [--auth-password AUTH_PASSWORD] [--log-access LOG_ACCESS] [--log-error LOG_ERROR] 
                [-q] [--start-in-tray]
@@ -177,6 +180,10 @@ options:
                         the server is silent
   --no-skip-dead-hosts  Do not refuse connections to hosts that failed several
                         times in a row
+  --no-doh              Resolve names with the system DNS instead of DNS over
+                        HTTPS
+  --doh-server URL      Own DoH resolver tried first, must support HTTP/1.1,
+                        e.g. https://94.140.14.14/dns-query (can be repeated)
   --domain-matching {loose,strict}
                         Domain matching mode (strict by default)
   --auth-username AUTH_USERNAME

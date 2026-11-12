@@ -5,6 +5,7 @@ import sys
 from typing import Optional
 
 from nodpi.config import ProxyConfig
+from nodpi.dns import Resolver
 from nodpi.interfaces import IBlacklistManager, ILogger
 from nodpi.proxy.handler import ConnectionHandler
 from nodpi.statistics import Statistics
@@ -22,13 +23,17 @@ class ProxyServer:
         blacklist_manager: IBlacklistManager,
         statistics: Statistics,
         logger: ILogger,
+        resolver: Resolver,
     ):
 
         self.config = config
+        self.resolver = resolver
         self.blacklist_manager = blacklist_manager
         self.statistics = statistics
         self.logger = logger
-        self.connection_handler = ConnectionHandler(config, blacklist_manager, statistics, logger)
+        self.connection_handler = ConnectionHandler(
+            config, blacklist_manager, statistics, logger, resolver
+        )
         self.server: Optional[asyncio.AbstractServer] = None
 
     async def print_banner(self) -> None:
@@ -36,7 +41,9 @@ class ProxyServer:
 
         update_message = await get_update_message()
         print_disclaimer(self.logger)
-        print_main_screen(self.logger, self.config, self.blacklist_manager, update_message)
+        print_main_screen(
+            self.logger, self.config, self.blacklist_manager, self.resolver, update_message
+        )
 
     async def display_stats(self) -> None:
         """Display live statistics"""

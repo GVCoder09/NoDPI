@@ -10,6 +10,7 @@ from nodpi import __version__
 from nodpi.autostart import manage_autostart
 from nodpi.blacklist import create_blacklist_manager
 from nodpi.cli import config_from_args, parse_args
+from nodpi.dns import build_resolver
 from nodpi.logger import ProxyLogger
 from nodpi.proxy.server import ProxyServer
 from nodpi.statistics import Statistics
@@ -50,7 +51,12 @@ async def run() -> None:
     config = config_from_args(args)
 
     logger = ProxyLogger(config.log_access_file, config.log_error_file, config.quiet)
-    blacklist_manager = create_blacklist_manager(config, logger)
+    try:
+        resolver = build_resolver(config.doh, config.doh_servers, config.out_host, logger.log_error)
+    except ValueError as e:
+        logger.fatal(str(e))
+        sys.exit(1)
+    blacklist_manager = create_blacklist_manager(config, logger, resolver)
     statistics = Statistics()
 
     logger.set_error_counter_callback(statistics.increment_error_connections)
@@ -58,7 +64,7 @@ async def run() -> None:
     if sys.platform == "win32" and not config.quiet:
         _start_tray(config.start_in_tray)
 
-    proxy = ProxyServer(config, blacklist_manager, statistics, logger)
+    proxy = ProxyServer(config, blacklist_manager, statistics, logger, resolver)
 
     try:
         await proxy.run()
