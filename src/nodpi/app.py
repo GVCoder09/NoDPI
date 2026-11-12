@@ -73,11 +73,21 @@ async def run() -> None:
             pass
 
 
+def _configure_console() -> None:
+    """Make console output safe: UTF-8 where possible, never crash on encoding"""
+
+    for stream in (sys.stdout, sys.stderr):
+        # AttributeError/ValueError: not a regular text stream (e.g. a GUI wrapper)
+        with contextlib.suppress(AttributeError, ValueError):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() -> None:
     """Console entry point"""
 
     if sys.platform == "win32":
         os.system("")  # enable ANSI escape sequences in the Windows console
+        _configure_console()
 
     with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(run())
