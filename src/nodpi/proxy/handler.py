@@ -19,6 +19,7 @@ from nodpi.proxy.dead_hosts import DeadHosts
 from nodpi.proxy.desync import send_fragments
 from nodpi.proxy.race import race_client_hello
 from nodpi.proxy.tls import TLS_HANDSHAKE, TLS_RECORD_HEADER_LEN, fragment_client_hello
+from nodpi.ui.formatting import format_size
 
 READ_CHUNK = 1500
 CONNECT_TIMEOUT = 10
@@ -413,6 +414,13 @@ class ConnectionHandler(IConnectionHandler):
                 await writer.drain()
         except asyncio.CancelledError:
             pass
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError) as e:
+            conn_info = self.active_connections.get(conn_key)
+            received = f", {format_size(conn_info.traffic_in)} received" if conn_info else ""
+            self.logger.log_error(
+                f"{self._conn_label(conn_key)} : connection reset ({type(e).__name__}){received}"
+            )
+            self.statistics.increment_error_connections()
         except Exception:
             self.logger.log_error(f"{self._conn_label(conn_key)} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
