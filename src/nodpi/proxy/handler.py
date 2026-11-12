@@ -259,7 +259,7 @@ class ConnectionHandler(IConnectionHandler):
         except asyncio.CancelledError:
             pass
         except Exception:
-            self.logger.log_error(f"{conn_info.dst_domain} : {traceback.format_exc()}")
+            self.logger.log_error(f"{self._conn_label(conn_key)} : {traceback.format_exc()}")
             self.statistics.increment_error_connections()
         finally:
             try:
@@ -272,6 +272,14 @@ class ConnectionHandler(IConnectionHandler):
                 conn_info = self.active_connections.pop(conn_key, None)
                 if conn_info:
                     self.logger.log_access(conn_info.access_log_line())
+
+    def _conn_label(self, conn_key: ConnKey) -> str:
+        """Domain of an active connection for log lines, or the client address"""
+
+        conn_info = self.active_connections.get(conn_key)
+        if conn_info:
+            return conn_info.dst_domain
+        return f"{conn_key[0]}:{conn_key[1]}"
 
     async def _handle_connection_error(
         self, writer: asyncio.StreamWriter, conn_key: ConnKey
