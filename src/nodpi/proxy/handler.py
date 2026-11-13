@@ -1,6 +1,7 @@
 """Handling of a single client connection: routing, ClientHello, piping"""
 
 import asyncio
+import sys
 import traceback
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -26,7 +27,7 @@ CONNECT_TIMEOUT = 10
 CLIENT_HELLO_TIMEOUT = 30
 FIRST_RESPONSE_TIMEOUT = 8
 RACE_METHODS = ("primary", "oob", "primary")
-RACE_SCHEDULE = (0, 0.1, 0.2, 1.5, 1.6, 1.7)
+RACE_SCHEDULE = (0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9, 1.2, 1.5, 1.9, 2.4, 3.0, 3.7, 4.5, 5.4, 6.4)
 
 ConnKey = Tuple[str, int]
 
@@ -463,7 +464,13 @@ class ConnectionHandler(IConnectionHandler):
 
             self.statistics.increment_total_connections()
             self.statistics.increment_error_connections()
-            self.logger.log_error(f"{label} : {traceback.format_exc()}")
+            error = sys.exc_info()[1]
+            if isinstance(error, (asyncio.TimeoutError, TimeoutError)):
+                self.logger.log_error(f"{label} : connection to server timed out")
+            elif isinstance(error, OSError):
+                self.logger.log_error(f"{label} : {type(error).__name__}: {error}")
+            else:
+                self.logger.log_error(f"{label} : {traceback.format_exc()}")
 
             try:
                 writer.close()
