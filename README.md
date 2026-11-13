@@ -263,4 +263,4 @@ A: No. Unlike a VPN or Tor, this program does not hide your traffic from your In
 
 ## Star History
 
-[![Star History Chart](https://star-history.dera.page/svg?repos=GVCoder09/NoDPI&type=Date)](https://star-history.dera.page/#GVCoder09/NoDPI&Date)
+[![Star History Chart](https://api.star-history.com/chart?repos=gvcoder09/nodpi&type=date&legend=bottom-right)](https://www.star-history.com/?repos=gvcoder09%2Fnodpi&type=date&legend=bottom-right)
